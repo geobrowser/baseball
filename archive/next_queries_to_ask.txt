@@ -1,0 +1,96 @@
+
+#Publish game with only retrosheet data
+
+
+Question for yaniv. What should I do about this copyright issue? Retrosheet data is free to use, but the MLB data is the live component. Not free to use for commercial purposes like we would be. Do we just ask forgiveness and go for it or find another method?
+Can definitely use the retrosheet data as the root data source / example either way.
+
+# Add formulaic richer description for game data
+
+#Enrich ontology with data blocks (can prolly add this later...)
+I would like to enrich this ontology a bit by adding data blocks to various entites. 
+
+TODO - Need to give an ontological description of how to do all of this...
+
+Note: Make sure to order properties using position (Position.generateBetween()) to set the order to match the orders listed for each data block below
+
+For a play, I would like to show all pitches that are related to it in a data block. 
+- Pitching data block: 
+    - Name: Pitch by pitch - {Play name}
+    - Filter = {"spaceId":{"in":["7570a0ba7552e6806e0751c2ad105754"]},"filter":{"8f151ba4de204e3c9cb499ddf96f48f1":{"is":"24107f18609b42cab4c9dac2d1e10139"},"fc0a45edbb024e9fb728a14fa87499f6":{"is":"GAME_ID"},"2155204b2c294af8a9bff2481fe8d564":{"is":"PLAY_ID"}}}
+    - Sort = Pitch number, ascending
+    - Properties: Batter, Pitcher, Pitch Number, Pitch Call, Pitch Type, Strike Zone, Plate X, Plate Z, Start Speed, End Speed, Spin Direction, Spin Rate, Hit Trajectory, Hit Distance, Launch Angle, Launch Speed
+    - View: Table view
+- Other notes:
+    - Fill in the description formulaicly so it reads more than just "Foul" or an equivalent
+
+
+For a Game, I would like to display game related data in the following tabs
+Note: On the tabs, should probably add a "Game" relation back to the game, so it is easy to differentiate / delete if needed
+Tabs:
+- Overview: Home Plays data block, Guest plays data block
+    - Name: {Team abbreviation} plays
+    - Filter = {"spaceId":{"in":["7570a0ba7552e6806e0751c2ad105754"]},"filter":{"8f151ba4de204e3c9cb499ddf96f48f1":{"is":"b34c4815a7e9494dbc7ed078fc09e5de"},"fc0a45edbb024e9fb728a14fa87499f6":{"is":"GAME_ID"},"1eede582ed2e4a86a5271f600a8c3ac4":{"is":"TEAM_ID"}}}
+    - Sort = Inning, descending
+    - Properties:
+        Inning, Top of Inning, Event, Batter, Pitcher,
+        Is Scoring Play, At Bat Index,
+        RBI, Balls, Strikes, 
+        Outs Before, Outs After,
+        Runner on 1B, Runner on 2B, Runner on 3B,
+        Batting Team, Pitching Team
+    - View: Table view
+- Batting: Home batting performances and guest batting performances data blocks
+    - Name: {Team abbreviation} batting
+    - Filter = {"spaceId":{"in":["7570a0ba7552e6806e0751c2ad105754"]},"filter":{"8f151ba4de204e3c9cb499ddf96f48f1":{"is":"239f6a3a0982482f8535c60deae25b35"},"fc0a45edbb024e9fb728a14fa87499f6":{"is":"GAME_ID"},"1eede582ed2e4a86a5271f600a8c3ac4":{"is":"TEAM_ID"}}}
+    - Sort = Hits, descending
+    - Properties: 
+        Player, Lineup Position, Plate Appearances, At Bats, Runs, Hits, Strikeouts, Walks, Intentional Walks,
+        RBI, Home Runs, Triples, Doubles, Stolen Bases, Hit By Pitch,
+        Caught Stealing, Grounded Into Double Play,  
+        Is Designated Hitter,
+        Sacrifice Flies,  Sacrifice Hits, 
+        Team,
+    - View: Table view
+- Pitching: Home pitching performances and guest pitching performances data blocks
+    - Name: {Team abbreviation} pitching
+    - Filter = {"spaceId":{"in":["7570a0ba7552e6806e0751c2ad105754"]},"filter":{"8f151ba4de204e3c9cb499ddf96f48f1":{"is":"d2209e8725c541d683954f27e2c27074"},"fc0a45edbb024e9fb728a14fa87499f6":{"is":"GAME_ID"},"1eede582ed2e4a86a5271f600a8c3ac4":{"is":"TEAM_ID"}}}
+    - Sort = Batters faced, descending
+    - Properties: Player,
+        Pitching Sequence, Innings Pitched,
+        Game Started, Complete Game, Shutout,
+        Pitches Thrown, Strikeouts,
+        Wild Pitches, Balks, Save, 
+        Batters Faced,
+        Earned Runs, Hits Allowed, Runs Allowed, Home Runs Allowed, Walks Issued,
+        Win, Loss,    
+    - View: Table view
+- Fielding: Home fielding performances and guest fielding performances data blocks
+    - Name: {Team abbreviation} fielding
+    - Filter = {"spaceId":{"in":["7570a0ba7552e6806e0751c2ad105754"]},"filter":{"8f151ba4de204e3c9cb499ddf96f48f1":{"is":"044473335a8742dab4001d33606305f8"},"fc0a45edbb024e9fb728a14fa87499f6":{"is":"GAME_ID"},"1eede582ed2e4a86a5271f600a8c3ac4":{"is":"TEAM_ID"}}}
+    - Sort = Putouts, descending
+    - Properties: Player,
+    Fielding Position,
+    
+    Errors, Innings Fielded, Assists, Double Plays, Putouts
+    - View: Table view
+
+Note: this would be better once sorting is put in place.
+
+
+#Enrich ontology with relation entities
+- Works at, team members, Past team members, etc.
+
+#Enrich ontology with shared relation entities? (Maybe not sure where this would be used yet)
+
+
+#Ontological rules outline
+Can we also create a running list of ontological rules that we should refer back to based on everything we have done so far?
+Naming conventions, when to use relations and other data types, etc.
+
+
+
+
+# Polymarket interactions
+Also, I want to potentially talk about using this data as training data for prediction market trading bots that are looking to trade on live baseball games?
+Actually that would a nice frontend app to use for this app. Query polymarket for baseball game prediction markets. Look at the current odds, liquidity, etc. and use this historical data to train an algorithm to give insights on what markets might be the best to bet on...

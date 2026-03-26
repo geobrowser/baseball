@@ -1,0 +1,11 @@
+# Environment
+.env
+
+# Dependencies
+node_modules/
+
+# Data (too large for git — 9.6 GB)
+data/
+
+# Bun
+bun.lockb

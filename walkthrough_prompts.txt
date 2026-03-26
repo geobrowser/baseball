@@ -1,0 +1,314 @@
+Baseball × Geo Walkthrough — Claude Prompt Sequence
+=====================================================
+
+These prompts are designed to be used in order during the walkthrough video series.
+Each prompt picks up where the last left off. Notes in [brackets] describe what to expect.
+
+---
+
+PHASE 1: DATA EXPLORATION
+--------------------------
+
+Prompt 1 — Explore the data
+---
+We have downloaded and parsed all available data from retrosheet.org. The parsed data is in data/parsed/ and there is a field reference in data_samples.txt. Can you review the data_samples.txt file and output a summary of all the entity types we have available, what fields each one has, and which fields look like they would be candidates for relations vs text/numeric properties on a Geo knowledge graph? Write this to a file called data_exploration_notes.txt.
+---
+[Claude will read data_samples.txt and produce a structured breakdown of all 14 data files with field categorization suggestions.]
+
+
+Prompt 2 — Explore the Geo API
+---
+Can you walk me through 01_api_demo.ts and explain what it's doing? I want to understand how to query the Geo knowledge graph API before we design our ontology.
+---
+[Claude explains the GraphQL API patterns, entity/value/relation model, and how to query existing types in the root space.]
+
+
+Prompt 3 — Check what already exists on Geo
+---
+Can you query the Geo GraphQL API to check what entity types already exist that are relevant to our baseball data? I'm thinking about types like Person, Team, City, State, Country, Role. Check if these exist and if so, get their IDs. We will want to reuse them rather than create duplicates.
+---
+[Claude will query the API and return the IDs for existing system types. These get marked `existing: true` in ontology.json later.]
+
+
+---
+PHASE 2: ONTOLOGY DESIGN
+--------------------------
+
+Prompt 4 — Initial ontology proposal
+---
+Based on the Retrosheet data we have parsed and the Geo knowledge graph model (see knowledge-graph-ontology.md for reference), what entity types and properties do you think we should set up for this project? Please think about:
+- What are the top-level entity types (things that will be primary browseable nodes)?
+- What are reference/lookup entity types (small finite sets like positions, handedness, game types)?
+- What properties should each type have, and what data types are most appropriate?
+- Where should we use relations to other entities vs storing a value directly?
+
+Output your proposal as a structured document — I will review and we can iterate.
+---
+[Claude produces an initial ontology proposal. Expect 15–20 types and 80–100 properties. Review and discuss before writing files.]
+
+
+Prompt 5 — Enforce relation-over-text principle
+---
+Looking at the ontology proposal, I want to make sure we are using relations wherever possible instead of storing data as text. Specifically:
+- City, state, and country should all be relation properties pointing to entity types (City type, State type, Country type) because each should exist as their own entities.
+- League should be a relation to a League entity type, not a text field.
+- Any other categorical data that appears in multiple places should follow the same pattern.
+
+Can you update the ontology proposal accordingly, and also make sure we have the City, State, Country, and League types defined?
+---
+[Claude updates the proposal to convert text fields to relations and adds the geographic + league type definitions.]
+
+
+Prompt 6 — Refine data types
+---
+A few specific data type decisions I want to nail down:
+
+1. Day game / Night game — let's make this a boolean. True = day game, False = night game.
+2. ERA, batting average, fielding percentage — these should be Float64 (decimal).
+3. Innings pitched — this should also be Float64. Note: innings pitched in baseball uses base-3 notation (6.2 means 6 and 2/3 innings, not 6.2), so document this convention in the property description.
+4. Win probability, leverage index — Float64.
+
+Can you review the full ontology and flag any other properties where the data type choice might need discussion?
+---
+[Claude updates data types and lists any other ambiguous ones for discussion. Settle them one by one.]
+
+
+Prompt 7 — Finalize naming conventions
+---
+Let's establish naming conventions for the ontology before we write any files. Here are the rules:
+- Only the first letter of the first word should be capitalized, unless it is an acronym (e.g., RBI, ERA, MLB, ID).
+- Minor words (prepositions, articles) stay lowercase in the middle of a name: "Runner on 1B", "Top of inning", "Hit by pitch".
+- Parenthetical units are capitalized: "Height (inches)", "Weight (lbs)".
+- Boolean properties: use positive phrasing without "Is" prefix for official stats (Day game, Game started, Complete game, Save). Use "Is" prefix for state descriptions (Is scoring play, Is designated hitter).
+
+Can you review the full ontology proposal and fix any names that don't follow these conventions? List all the ones you changed.
+---
+[Claude audits and corrects all property/type names. Review the list of changes carefully.]
+
+
+Prompt 8 — Write ontology.txt
+---
+Now let's write the human-readable ontology design document. Please create ontology.txt at the repo root with the following structure:
+- A section for each entity type with: type name, description, list of properties (name, data type, description, source field if applicable)
+- A section describing relation types and what entity types they connect
+- An entity relationship diagram (ASCII art is fine)
+- A naming conventions section summarizing the rules we established
+
+Use the full ontology we have designed through our discussion so far.
+---
+[Claude writes ontology.txt. Review it carefully — this is the canonical design document.]
+
+
+Prompt 9 — Create docs/ontology-rules.md
+---
+Can you create a docs/ontology-rules.md file that captures all the ontological design rules we have established? This should be a reference document for anyone adding to the ontology in the future. Cover:
+- When to use relations vs text/numeric properties
+- Data type selection guidelines (with baseball-specific examples)
+- Naming conventions (complete with examples)
+- Entity modeling patterns (reference entities, one entity per observation, geographic chain, etc.)
+- Deduplication strategy (lookup before create, Retrosheet ID → name+type priority)
+
+This should be concise but complete. Someone reading it should be able to make the right design decisions without asking us.
+---
+[Claude writes the rules doc. Review and add anything you feel is missing from our discussions.]
+
+
+Prompt 10 — Create src/ontology.json
+---
+Now let's create the machine-readable version of the ontology. Please create src/ontology.json with stable entity IDs for all new types and properties. Use IdUtils.generate() from the Geo SDK to generate the IDs, but write them as fixed strings in the file — they should not change between runs.
+
+Structure:
+- "types" object: keyed by snake_case type key, with id, name, description, and existing: true for system types
+- "properties" object: keyed by snake_case property key, with id, name, description, dataType, and toEntityTypes array (for RELATION properties, list the type keys that are valid targets)
+- "type_schemas" object: keyed by type key, listing the property keys that belong to each type's default schema
+
+For system types that already exist (Person, City, State, Country, Role, Team), use the IDs we found earlier from the API.
+---
+[Claude generates ontology.json. This is a large file — review the structure and spot check a few types and properties.]
+
+
+Prompt 11 — Rename and clean up ontology.json
+---
+A few cleanup items for src/ontology.json:
+
+1. Make sure the field for relation target types is named `toEntityTypes` (not relationValueTypes or anything else).
+2. Verify that all type and property names follow the naming conventions we established (first letter capitalized, acronyms all caps).
+3. Make sure every type and property has a description.
+
+Can you audit the file and fix any issues?
+---
+[Claude makes corrections. Re-read the file to verify.]
+
+
+Prompt 12 — Create docs/field-mappings.md
+---
+Can you create docs/field-mappings.md that maps every field in our parsed Retrosheet data files to the corresponding ontology property? For each data file, show a table with: source field name, example value, and the ontology property (or relation type) it maps to.
+
+Cover all 14 files in data/parsed/. This will be the reference we use when writing the publish scripts.
+---
+[Claude writes field-mappings.md. This is a long document — it is primarily for reference when writing publish scripts.]
+
+
+---
+PHASE 3: PUBLISHING THE ONTOLOGY
+----------------------------------
+
+Prompt 13 — Update CLAUDE.md and docs
+---
+We have made a lot of progress on the ontology. Can you update CLAUDE.md and any relevant docs to reflect where we are? Specifically:
+- Update CLAUDE.md project layout section to include ontology.txt, src/ontology.json, docs/field-mappings.md, and docs/ontology-rules.md
+- Update CLAUDE.md deep reference table to point to these new files
+- Make sure the project layout is accurate
+---
+[Claude updates CLAUDE.md. Quick review to confirm accuracy.]
+
+
+Prompt 14 — Write 08_publish_ontology.ts
+---
+Can you write a script 08_publish_ontology.ts that publishes all the new types and properties from src/ontology.json to the Geo knowledge graph?
+
+Requirements:
+- Skip entities marked existing: true (they are already in the root space)
+- Before publishing, query the API to check if any entities have already been published (by checking their IDs with findEntityById). If found, skip them with a log message.
+- Publish properties first, then types (types reference property IDs).
+- For relation properties, pass toEntityTypes (the array of valid target type IDs) to Graph.createProperty().
+- For types, resolve the type_schemas property key list to property IDs and pass to Graph.createType().
+- Support --dry-run (write ops to file, don't publish) and --force (skip API checks, publish all) flags.
+- Log clearly what is being created vs skipped.
+
+Use publishOps() from src/functions.ts for publishing.
+---
+[Claude writes 08_publish_ontology.ts. Review it carefully before running.]
+
+
+Prompt 15 — Review and dry run
+---
+Can you do a dry run review of 08_publish_ontology.ts? Run it with --dry-run and show me what would be published. How many types and properties would be created? Are there any potential issues?
+---
+[Run: `bun run 08_publish_ontology.ts --dry-run`]
+[Claude analyzes the output and flags any issues before the real publish.]
+
+
+Prompt 16 — Publish the ontology
+---
+Everything looks good. Let's publish the ontology to Geo. Please run 08_publish_ontology.ts and report back what was published.
+---
+[Run: `bun run 08_publish_ontology.ts`]
+[Claude runs the script and reports. After publishing, open the Geo browser to verify types and properties appear.]
+
+
+---
+PHASE 4: PUBLISHING TEST ENTITIES
+------------------------------------
+
+Prompt 17 — Write 09_publish_test_entities.ts
+---
+Now let's write a script to publish a representative set of test entities so we can navigate and test the ontology in the Geo browser.
+
+Please write 09_publish_test_entities.ts that publishes in this order:
+1. Reference entities: Handedness (Left, Right, Switch), Positions (all 9 + DH + P), Roles (Player, Manager, Coach, Umpire), Game types (Regular season, Postseason, etc.), Leagues
+2. A few City/State/Country entities (for player birthplaces and team home cities)
+3. 5–10 teams (include a mix of historical and current)
+4. 10–15 notable players with full bios and relations to birthplace/handedness/position
+5. A ballpark
+6. A season entity
+7. One complete game with all its context (home/away teams, venue, season, pitchers, umpires, managers)
+8. The plays, batting performances, pitching performances, and fielding performances for that game
+
+Use recent data (2024 season preferred). Before creating any entity, check the API for an existing match using Retrosheet ID or name+type as appropriate. Import helper functions from src/functions.ts.
+
+Read archive/field-mappings.md to understand how source fields map to properties.
+---
+[Claude writes 09_publish_test_entities.ts. This is a large script — review the structure and key entities.]
+
+
+Prompt 18 — Publish test entities
+---
+Let's publish the test entities. Run 09_publish_test_entities.ts and let me know what was created. After it completes I will go review the entities in the Geo browser.
+---
+[Run: `bun run 09_publish_test_entities.ts`]
+[Open Geo browser and navigate through the published entities. Look at a player, a game, a play.]
+
+
+Prompt 19 — Review and iterate
+---
+I have reviewed the published entities in the Geo browser. Here is my feedback: [add specific feedback after reviewing].
+
+Can you help me figure out what needs to be updated in the ontology or the publish script to fix these issues?
+---
+[This prompt is open-ended — fill in feedback after browsing the entities. Common issues: missing properties, wrong data types, relation targets missing, awkward naming.]
+
+
+---
+PHASE 5: DATA BLOCKS AND ENRICHMENT
+--------------------------------------
+
+Prompt 20 — Add data blocks to games
+---
+I want to enrich the Game entities with data blocks showing related data. For each published game, I want:
+- A plays data block showing all plays in the game (filterable by team, sorted by inning)
+- A batting performances data block (home and away separately)
+- A pitching performances data block
+- A fielding performances data block
+
+Can you update 09_publish_test_entities.ts (or create a new enrichment script) to add these data blocks to the game we published? Use the data block patterns from 02_publish_demo.ts as reference. Make sure to set the filter to scope to the correct space, game, and team.
+---
+[Claude updates or creates a data block enrichment script.]
+
+
+Prompt 21 — Review data blocks in browser
+---
+Let's run the enrichment script and verify the data blocks appear correctly in the Geo browser. Run the script and let me know what was published. I'll check the browser and give feedback.
+---
+[Run the enrichment script. Open the Geo browser and navigate to the game entity to see the data block tabs.]
+
+
+---
+PHASE 6: BULK PUBLISHING (FUTURE SESSION)
+-------------------------------------------
+
+Prompt 22 — Plan bulk publishing
+---
+We have the ontology published and test entities working. Now I want to plan the bulk publishing of the full dataset. Let's start with the 2024 season as a focused initial dataset before expanding to the full history.
+
+Can you:
+1. Estimate how many entities would be involved in publishing just the 2024 season (teams, players, games, plays, performances)?
+2. Design a batch publishing strategy (chunk sizes, rate limiting, idempotency)?
+3. Sketch out what a bulk publish script would look like?
+
+We don't need to write the full script yet, just plan the approach.
+---
+
+
+Prompt 23 — Write bulk publish scripts
+---
+Let's write the bulk publish scripts for the 2024 season. Start with a script that publishes all teams and players for that season. Build in idempotency (check Retrosheet ID before creating), progress logging, and batch sizes of ~50 entities per publish call.
+
+After we confirm that works, we can move to games and performances.
+---
+
+
+---
+PHASE 7: APPLICATION DEVELOPMENT (FUTURE SESSION)
+----------------------------------------------------
+
+Prompt 24 — Define app functionality
+---
+The knowledge graph is populated. Let's talk about the web application. I want to build something that showcases the graph in an interesting way. Some ideas:
+- Virtual Hall of Fame: browse players, their career stats, teams they played for, ballparks
+- Game explorer: navigate a specific game play by play, see matchup stats
+- Historical search: "all no-hitters at Fenway Park", "players born in Japan who hit 40+ HRs"
+
+What do you think would be the most compelling one to build first? What would the architecture look like using the Geo GraphQL API?
+---
+
+
+Prompt 25 — Build the app
+---
+Let's build the [chosen app type]. Can you generate a complete React/Next.js app that:
+- Queries the Geo GraphQL API to fetch entities from our baseball space
+- [Specific functionality based on decision from Prompt 24]
+- Presents the data in a clean, browseable UI
+
+Use the API patterns from 01_api_demo.ts and docs/graphql-api.md as reference. The baseball space ID is in .env as DEMO_SPACE_ID.
+---

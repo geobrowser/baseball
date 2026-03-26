@@ -1,0 +1,1016 @@
+================================================================================
+RETROSHEET PARSED DATA — COMPLETE FIELD REFERENCE
+================================================================================
+
+All examples use recent data (2023-2026). 14 parsed files, 9.6 GB total.
+
+
+================================================================================
+1. players.json — 26,961 records
+================================================================================
+
+
+
+Biographical data for every person in Retrosheet history. Includes players,
+managers, coaches, and umpires. A single person can have multiple roles.
+
+Example (Shohei Ohtani):
+{
+  "retrosheet_id": "ohtas001",
+  "last_name": "Ohtani",
+  "first_name": "Shohei",
+  "full_name": "Shohei Ohtani",
+  "birth_name": null,
+  "alt_name": null,
+  "birth_date": "1994-07-05",
+  "birth_city": "Oshu",
+  "birth_state": "Iwate",
+  "birth_country": "Japan",
+  "death_date": null,
+  "death_city": null,
+  "death_state": null,
+  "death_country": null,
+  "debut_player": "2018-03-29",
+  "last_player": "2025-11-01",
+  "debut_coach": null,
+  "last_coach": null,
+  "debut_manager": null,
+  "last_manager": null,
+  "debut_umpire": null,
+  "last_umpire": null,
+  "bats": "L",
+  "throws": "R",
+  "height_inches": 76,
+  "weight_lbs": 203,
+  "hall_of_fame": false,
+  "roles": ["player"]
+}
+
+Example (Aaron Judge):
+{
+  "retrosheet_id": "judga001",
+  "last_name": "Judge",
+  "first_name": "Aaron",
+  "full_name": "Aaron James Judge",
+  "birth_name": null,
+  "alt_name": null,
+  "birth_date": "1992-04-26",
+  "birth_city": "Linden",
+  "birth_state": "California",
+  "birth_country": "USA",
+  "death_date": null,
+  "death_city": null,
+  "death_state": null,
+  "death_country": null,
+  "debut_player": "2016-08-13",
+  "last_player": "2025-10-08",
+  "debut_coach": null,
+  "last_coach": null,
+  "debut_manager": null,
+  "last_manager": null,
+  "debut_umpire": null,
+  "last_umpire": null,
+  "bats": "R",
+  "throws": "R",
+  "height_inches": 79,
+  "weight_lbs": 275,
+  "hall_of_fame": false,
+  "roles": ["player"]
+}
+
+Example (Juan Soto — born outside USA):
+{
+  "retrosheet_id": "sotoj001",
+  "last_name": "Soto",
+  "first_name": "Juan",
+  "full_name": "Juan Jose (Pacheco) Soto",
+  "birth_name": null,
+  "alt_name": null,
+  "birth_date": "1998-10-25",
+  "birth_city": "Santo Domingo",
+  "birth_state": "Distrito Nacional",
+  "birth_country": "Dominican Republic",
+  "death_date": null,
+  "death_city": null,
+  "death_state": null,
+  "death_country": null,
+  "debut_player": "2018-05-15",
+  "last_player": "2025-09-28",
+  "debut_coach": null,
+  "last_coach": null,
+  "debut_manager": null,
+  "last_manager": null,
+  "debut_umpire": null,
+  "last_umpire": null,
+  "bats": "L",
+  "throws": "L",
+  "height_inches": 73,
+  "weight_lbs": 185,
+  "hall_of_fame": false,
+  "roles": ["player"]
+}
+
+
+Person type entity
+
+Fields:
+  retrosheet_id   — Unique ID (format: first 4 chars of last name + first initial + sequence)
+  last_name       — Last name
+  first_name      — Common first name (may differ from legal name)
+  full_name       — Full legal name
+  birth_name      — Birth name if different from full_name (rare)
+  alt_name        — Alternate name (rare)
+  birth_date      — ISO date (YYYY-MM-DD)
+  birth_city/state/country — Birth location
+  death_date/city/state/country — Death info (null if alive)
+  debut_player    — First game as player (ISO date, null if never played)
+  last_player     — Last game as player
+  debut_coach     — First game as coach (null if never coached)
+  last_coach      — Last game as coach
+  debut_manager   — First game as manager
+  last_manager    — Last game as manager
+  debut_umpire    — First game as umpire
+  last_umpire     — Last game as umpire
+  bats            — Batting hand: "L", "R", "B" (both)
+  throws          — Throwing hand: "L", "R", "B"
+  height_inches   — Height in inches (null if unknown)
+  weight_lbs      — Weight in pounds (null if unknown)
+  hall_of_fame    — Boolean, inducted into Baseball Hall of Fame
+  roles           — Array of: "player", "manager", "coach", "umpire"
+
+
+================================================================================
+2. teams.json — 293 records
+================================================================================
+
+Every franchise in Retrosheet history, including Negro Leagues.
+
+Example (New York Yankees):
+{
+  "retrosheet_id": "NYA",
+  "league": "AL",
+  "city": "New York",
+  "nickname": "Yankees",
+  "full_name": "New York Yankees",
+  "first_year": 1903,
+  "last_year": 2025,
+  "alt_ids": []
+}
+
+Example (Negro League team):
+{
+  "retrosheet_id": "ACY",
+  "league": "ECL",
+  "city": "Atlantic City",
+  "nickname": "Bacharach Giants",
+  "full_name": "Atlantic City Bacharach Giants",
+  "first_year": 1916,
+  "last_year": 1929,
+  "alt_ids": []
+}
+
+Team type entity
+Fields:
+  retrosheet_id — 2-3 char team code
+  league        — League code: AL, NL, AA, FL, PL, UA, NA, ECL, NNL, NAL, NSL, etc.
+  city          — City name
+  nickname      — Team nickname
+  full_name     — "City Nickname"
+  first_year    — First active year (integer)
+  last_year     — Last active year (null if currently active)
+  alt_ids       — Array of alternate team codes used in different seasons
+
+
+================================================================================
+3. ballparks.json — 656 records
+================================================================================
+
+Every ballpark/venue in Retrosheet history.
+
+Example (Fenway Park — still active):
+{
+  "retrosheet_id": "BOS07",
+  "name": "Fenway Park",
+  "aka": null,
+  "city": "Boston",
+  "state": "MA",
+  "start_date": "4/20/1912",
+  "end_date": null,
+  "league": "AL",
+  "notes": "BOS:1912-date; BSN:9/7to9/29/1914;4/14to7/26/15"
+}
+
+Example (Yankee Stadium I — closed):
+{
+  "retrosheet_id": "NYC16",
+  "name": "Yankee Stadium I",
+  "aka": null,
+  "city": "New York",
+  "state": "NY",
+  "start_date": "4/18/1923",
+  "end_date": "9/21/2008",
+  "league": "AL",
+  "notes": "no games 1974-75"
+}
+
+Ballpark, Field, or Stadium type entity.
+Fields:
+  retrosheet_id — Park code (city prefix + sequence number)
+  name          — Official venue name
+  aka           — Also known as (alternate names)
+  city          — City
+  state         — State/province abbreviation
+  start_date    — First game date (M/D/YYYY format)
+  end_date      — Last game date (null if still active)
+  league        — Primary league
+  notes         — Free-text notes about usage, gaps, shared tenants
+
+
+================================================================================
+4. rosters.json — 125,566 records
+================================================================================
+
+Season-level roster assignments: which player was on which team in which year.
+
+Example (Ohtani on Dodgers, 2024):
+{
+  "player_id": "ohtas001",
+  "last_name": "Ohtani",
+  "first_name": "Shohei",
+  "bats": "L",
+  "throws": "R",
+  "team_id": "NLS",
+  "position": "DH",
+  "year": 2024
+}
+
+Works at relationship / Team members relationship with data stored on relation entity
+Fields:
+  player_id  — Retrosheet person ID (matches players.json retrosheet_id)
+  last_name  — Last name
+  first_name — First name
+  bats       — "L", "R", "B"
+  throws     — "L", "R"
+  team_id    — Team code (matches teams.json retrosheet_id)
+  position   — Primary position code: C, 1B, 2B, 3B, SS, LF, CF, RF, P, DH, OF
+  year       — Season year (integer)
+
+Note: A player traded mid-season will have multiple roster entries for that year.
+
+
+================================================================================
+5. gamelogs.ndjson — 237,580 records
+================================================================================
+
+One record per game with team-level box score totals, key personnel, and
+game metadata. The richest single-game summary.
+
+Example (2024 World Series Game 1 — Dodgers 6, Yankees 3):
+{
+  "date": "2024-10-25",
+  "game_number": "0",
+  "day_of_week": "Fri",
+  "visiting_team": "NYA",
+  "visiting_league": "AL",
+  "home_team": "LAN",
+  "home_league": "NL",
+  "visiting_score": 3,
+  "home_score": 6,
+  "game_length_outs": 59,
+  "day_night": "N",
+  "completion_info": null,
+  "forfeit_info": null,
+  "park_id": "LOS03",
+  "attendance": 52394,
+  "duration_minutes": 207,
+  "v_at_bats": 40, "v_hits": 10, "v_doubles": 1, "v_triples": 0,
+  "v_home_runs": 1, "v_rbi": 3, "v_walks": 3, "v_strikeouts": 4,
+  "v_stolen_bases": 0, "v_left_on_base": 6,
+  "h_at_bats": 33, "h_hits": 7, "h_doubles": 2, "h_triples": 2,
+  "h_home_runs": 1, "h_rbi": 6, "h_walks": 1, "h_strikeouts": 0,
+  "h_stolen_bases": 0, "h_left_on_base": 6,
+  "hp_umpire_id": "torrc901",
+  "hp_umpire_name": "Carlos Torres",
+  "v_manager_id": "boona001",
+  "h_manager_id": "robed001",
+  "winning_pitcher_id": "treib001",
+  "winning_pitcher_name": "Blake Treinen",
+  "losing_pitcher_id": "cousj001",
+  "losing_pitcher_name": "Jake Cousins",
+  "save_pitcher_id": null,
+  "save_pitcher_name": "(none)",
+  "v_starting_pitcher_id": "coleg001",
+  "v_starting_pitcher_name": "Gerrit Cole",
+  "h_starting_pitcher_id": "flahj002",
+  "h_starting_pitcher_name": "Jack Flaherty",
+  "acquisition_info": "Y"
+}
+
+Example (2025 World Series — Blue Jays 11, Dodgers 4):
+{
+  "date": "2025-10-24",
+  "game_number": "0",
+  "day_of_week": "Fri",
+  "visiting_team": "LAN",
+  "visiting_league": "NL",
+  "home_team": "TOR",
+  "home_league": "AL",
+  "visiting_score": 4,
+  "home_score": 11,
+  "game_length_outs": 51,
+  "day_night": "N",
+  "park_id": "TOR02",
+  "attendance": 44353,
+  "duration_minutes": 193,
+  ...
+}
+
+Season entity
+Game entity
+On relation entity to team could have team summary stats
+
+Fields:
+  date                   — Game date (YYYY-MM-DD)
+  game_number            — "0" for single game, "1"/"2" for doubleheader
+  day_of_week            — "Mon", "Tue", etc.
+  visiting_team/league   — Visiting team code and league
+  home_team/league       — Home team code and league
+  visiting_score         — Final visiting team runs (integer)
+  home_score             — Final home team runs (integer)
+  game_length_outs       — Total outs recorded (54 = regulation 9-inning game)
+  day_night              — "D" (day) or "N" (night)
+  completion_info        — Info if game was completed on a different date
+  forfeit_info           — Forfeit details if applicable
+  park_id                — Ballpark code (matches ballparks.json)
+  attendance             — Attendance count (integer)
+  duration_minutes       — Game duration in minutes
+  v_at_bats...v_left_on_base — Visiting team box score totals (10 stat fields)
+  h_at_bats...h_left_on_base — Home team box score totals (10 stat fields)
+  hp_umpire_id/name      — Home plate umpire
+  v_manager_id           — Visiting team manager ID
+  h_manager_id           — Home team manager ID
+  winning_pitcher_id/name   — Winning pitcher
+  losing_pitcher_id/name    — Losing pitcher
+  save_pitcher_id/name      — Save pitcher (null if none)
+  v_starting_pitcher_id/name — Visiting starting pitcher
+  h_starting_pitcher_id/name — Home starting pitcher
+  acquisition_info       — "Y" if acquired by Retrosheet
+
+
+================================================================================
+6. ejections.json — 19,730 records
+================================================================================
+
+Every recorded ejection in MLB history.
+
+Example (A.J. Hinch ejected, 2024):
+{
+  "game_id": "DET202409290",
+  "date": "09/29/2024",
+  "game_number": null,
+  "ejected_id": "hinca001",
+  "ejected_name": "A.J. Hinch",
+  "team": "DET",
+  "role": "M",
+  "umpire_id": "hudsm901",
+  "umpire_name": "Marvin Hudson",
+  "inning": "9",
+  "reason": "Arguing result of replay review"
+}
+
+Ejection entity
+Relation from game to ejection entity?
+
+Fields:
+  game_id       — Retrosheet game ID (team + YYYYMMDD + game number)
+  date          — Date (MM/DD/YYYY format — note: different from other files)
+  game_number   — Doubleheader game number (null for single games)
+  ejected_id    — Retrosheet ID of ejected person
+  ejected_name  — Name of ejected person
+  team          — Team code of ejected person
+  role          — "P" (player), "M" (manager), "C" (coach)
+  umpire_id     — Retrosheet ID of ejecting umpire
+  umpire_name   — Name of ejecting umpire
+  inning        — Inning of ejection ("-1" if unknown/before game)
+  reason        — Free-text reason for ejection
+
+
+================================================================================
+7. schedules.ndjson — 238,816 records
+================================================================================
+
+Scheduled games including postponements and makeup dates. Includes future
+seasons (through 2026).
+
+Example (2026 season finale — BAL @ NYA):
+{
+  "date": "2026-09-27",
+  "game_number": "0",
+  "day_of_week": "Sunday",
+  "visiting_team": "BAL",
+  "visiting_league": "AL",
+  "visiting_game_number": "162",
+  "home_team": "NYA",
+  "home_league": "AL",
+  "home_game_number": "162",
+  "time_of_day": "d",
+  "postponement_info": "NYC21",
+  "makeup_date": null
+}
+
+Team / season relation could have a schedule entity collecting the schedule of games as shown here?
+
+Fields:
+  date                   — Scheduled date (YYYY-MM-DD)
+  game_number            — "0" single, "1"/"2" doubleheader
+  day_of_week            — Full name: "Monday", "Tuesday", etc.
+  visiting_team/league   — Visiting team code and league
+  visiting_game_number   — Team's sequential game number for the season
+  home_team/league       — Home team code and league
+  home_game_number       — Team's sequential game number for the season
+  time_of_day            — "D"/"d" (day) or "N"/"n" (night)
+  postponement_info      — Reason or venue info if postponed
+  makeup_date            — Date game was made up (YYYYMMDD)
+
+
+================================================================================
+8. batting.ndjson — 5,746,328 records
+================================================================================
+
+Individual player batting lines for every game. Each record is one player's
+performance in one game.
+
+Example (Ohtani batting in 2025 World Series Game 5 — LAN @ TOR):
+{
+  "gid": "TOR202511010",
+  "id": "ohtas001",
+  "team": "LAN",
+  "b_lp": "1",
+  "b_seq": "1",
+  "stattype": "value",
+  "b_pa": "6",
+  "b_ab": "5",
+  "b_r": "0",
+  "b_h": "2",
+  "b_d": "0",
+  "b_t": "0",
+  "b_hr": "0",
+  "b_rbi": "0",
+  "b_sh": "0",
+  "b_sf": "0",
+  "b_hbp": "0",
+  "b_w": "1",
+  "b_iw": "0",
+  "b_k": "0",
+  "b_sb": "0",
+  "b_cs": "0",
+  "b_gdp": "0",
+  "b_xi": "0",
+  "b_roe": "0",
+  "dh": "1",
+  "date": "20251101",
+  "number": "0",
+  "site": "TOR02",
+  "vishome": "v",
+  "opp": "TOR",
+  "win": "1",
+  "loss": "0",
+  "tie": "0",
+  "gametype": "worldseries",
+  "box": "y",
+  "pbp": "y"
+}
+
+This could go on relation from game to player or team states to player
+
+Fields:
+  gid        — Game ID (team + YYYYMMDD + game number)
+  id         — Batter's Retrosheet ID
+  team       — Batter's team code
+  b_lp       — Lineup position (1-9)
+  b_seq      — Sequence in slot (1 = starter, 2+ = pinch hitters/substitutes)
+  stattype   — "value" (actual stats) or "official" (official scorer adjustments)
+  b_pa       — Plate appearances
+  b_ab       — At bats
+  b_r        — Runs scored
+  b_h        — Hits
+  b_d        — Doubles
+  b_t        — Triples
+  b_hr       — Home runs
+  b_rbi      — Runs batted in
+  b_sh       — Sacrifice hits (bunts)
+  b_sf       — Sacrifice flies
+  b_hbp      — Hit by pitch
+  b_w        — Walks
+  b_iw       — Intentional walks
+  b_k        — Strikeouts
+  b_sb       — Stolen bases
+  b_cs       — Caught stealing
+  b_gdp      — Grounded into double play
+  b_xi       — Reached on interference
+  b_roe      — Reached on error
+  dh         — "1" if batting as designated hitter
+  date       — Game date (YYYYMMDD)
+  number     — Game number (doubleheader)
+  site       — Ballpark code
+  vishome    — "v" (visitor) or "h" (home)
+  opp        — Opponent team code
+  win/loss/tie — Team game result ("0" or "1")
+  gametype   — "regular", "worldseries", "alcs", "nlcs", "alds", "nlds", "wildcard", "allstar"
+  box        — "y" if box score data available
+  pbp        — "y" if play-by-play data available
+
+Note: Zero-value fields may be omitted to save space.
+
+
+================================================================================
+9. pitching.ndjson — 1,269,889 records
+================================================================================
+
+Individual pitcher game lines. Each record is one pitcher's performance
+in one game.
+
+Example (Paul Sewald pitching in 2023 World Series Game 5 — TEX @ ARI):
+{
+  "gid": "ARI202311010",
+  "id": "sewap001",
+  "team": "ARI",
+  "p_seq": "3",
+  "stattype": "value",
+  "p_ipouts": "3",
+  "p_noout": "0",
+  "p_bfp": "8",
+  "p_h": "5",
+  "p_d": "0",
+  "p_t": "0",
+  "p_hr": "1",
+  "p_r": "4",
+  "p_er": "4",
+  "p_w": "0",
+  "p_iw": "0",
+  "p_k": "2",
+  "p_hbp": "0",
+  "p_wp": "0",
+  "p_bk": "0",
+  "p_sh": "0",
+  "p_sf": "0",
+  "p_sb": "0",
+  "p_cs": "0",
+  "p_pb": "0",
+  "p_gf": "1",
+  "date": "20231101",
+  "number": "0",
+  "site": "PHO01",
+  "vishome": "h",
+  "opp": "TEX",
+  "win": "0",
+  "loss": "1",
+  "tie": "0",
+  "gametype": "worldseries",
+  "box": "y",
+  "pbp": "y"
+}
+
+Same structure as batting lines above
+
+Fields:
+  gid        — Game ID
+  id         — Pitcher's Retrosheet ID
+  team       — Pitcher's team code
+  p_seq      — Pitching sequence (1 = starter, 2+ = relievers in order of appearance)
+  stattype   — "value" or "official"
+  p_ipouts   — Innings pitched as outs (e.g., "27" = 9 IP, "3" = 1 IP, "2" = 0.2 IP)
+  p_noout    — "1" if pitcher recorded no outs
+  p_bfp      — Batters faced
+  p_h        — Hits allowed
+  p_d        — Doubles allowed
+  p_t        — Triples allowed
+  p_hr       — Home runs allowed
+  p_r        — Runs allowed
+  p_er       — Earned runs
+  p_w        — Walks issued
+  p_iw       — Intentional walks issued
+  p_k        — Strikeouts
+  p_hbp      — Hit batters
+  p_wp       — Wild pitches
+  p_bk       — Balks
+  p_sh       — Sacrifice hits allowed
+  p_sf       — Sacrifice flies allowed
+  p_sb       — Stolen bases allowed
+  p_cs       — Caught stealing
+  p_pb       — Passed balls
+  p_gf       — "1" if game finished
+  lp         — "1" if losing pitcher
+  p_gs       — "1" if game started
+  p_cg       — "1" if complete game
+  date/number/site/vishome/opp/win/loss/tie/gametype — Same as batting
+
+
+================================================================================
+10. fielding.ndjson — 1,738,253 records
+================================================================================
+
+Individual fielding lines. Each record is one player at one position in one
+game. A player who plays multiple positions gets multiple records.
+
+Example (Gary Geiger fielding CF for Boston, 1961):
+{
+  "gid": "BOS196106181",
+  "id": "geigg101",
+  "team": "BOS",
+  "d_seq": "1",
+  "d_pos": "8",
+  "stattype": "value",
+  "d_ifouts": "27",
+  "d_po": "4",
+  "d_a": "0",
+  "d_e": "0",
+  "d_dp": "0",
+  "d_tp": "0",
+  "d_gs": "1",
+  "date": "19610618",
+  "number": "1",
+  "site": "BOS07",
+  "vishome": "h",
+  "opp": "WS2",
+  "win": "1",
+  "loss": "0",
+  "tie": "0",
+  "gametype": "regular",
+  "box": "y",
+  "pbp": "y"
+}
+
+Same structure as batting and pitching lines above
+
+Fields:
+  gid        — Game ID
+  id         — Fielder's Retrosheet ID
+  team       — Fielder's team code
+  d_seq      — Defensive sequence at position (1 = started, 2+ = entered later)
+  d_pos      — Position number: 1=P, 2=C, 3=1B, 4=2B, 5=3B, 6=SS, 7=LF, 8=CF, 9=RF, 10=DH
+  stattype   — "value" or "official"
+  d_ifouts   — Innings fielded as outs (27 = full 9-inning game)
+  d_po       — Putouts
+  d_a        — Assists
+  d_e        — Errors
+  d_dp       — Double plays participated in
+  d_tp       — Triple plays participated in
+  d_gs       — "1" if started at this position
+  date/number/site/vishome/opp/win/loss/tie/gametype — Same as batting
+
+Note: Fielding data coverage ends around 1961 (not available for all eras).
+
+
+================================================================================
+11. plays.ndjson — 6,515,744 records
+================================================================================
+
+Play-by-play: every plate appearance with full game state. The most granular
+data — includes lineup positions, fielder IDs, baserunner state, and event
+outcomes.
+
+Example (Frank Howard walks in 8th inning, WAS vs NYA, 1970):
+{
+  "gid": "WS2197004210",
+  "event": "W",
+  "inning": "8",
+  "top_bot": "1",
+  "vis_home": "1",
+  "site": "WAS10",
+  "batteam": "WS2",
+  "pitteam": "NYA",
+  "score_v": "5",
+  "score_h": "7",
+  "batter": "howaf102",
+  "pitcher": "mcdal101",
+  "lp": "3",
+  "bat_f": "7",
+  "bathand": "R",
+  "pithand": "R",
+  "balls": "?",
+  "strikes": "?",
+  "count": "??",
+  "pa": "1",
+  "walk": "1",
+  "outs_pre": "2",
+  "outs_post": "2",
+  "br1_post": "howaf102",
+  "pr1_post": "mcdal101",
+  "l1"-"l9": "[lineup player IDs for all 9 batting order spots]",
+  "lf1"-"lf9": "[fielding positions for each lineup spot]",
+  "f2"-"f9": "[current fielder IDs by defensive position]"
+}
+
+Yeah the structure of this is gonna be tough... maybe each play just gets their own entity and then points back to game?
+
+Fields:
+  gid           — Game ID
+  event         — Event code: "S" (single), "D" (double), "T" (triple), "HR" (home run),
+                  "W" (walk), "K" (strikeout), "HP" (hit by pitch), "NP" (no play),
+                  "8/F" (flyout to CF), "63" (groundout SS to 1B), etc.
+  inning        — Inning number
+  top_bot       — "0" (top/visiting) or "1" (bottom/home)
+  vis_home      — Same as top_bot (redundant)
+  site          — Ballpark code
+  batteam       — Batting team code
+  pitteam       — Pitching/fielding team code
+  score_v       — Visiting team score at time of play
+  score_h       — Home team score at time of play
+  batter        — Batter's Retrosheet ID
+  pitcher       — Pitcher's Retrosheet ID
+  lp            — Batter's lineup position (1-9)
+  bat_f         — Batter's fielding position
+  bathand       — Batter's handedness: "L", "R", "B", "?"
+  pithand       — Pitcher's handedness: "L", "R", "?"
+  balls/strikes — Pitch count ("?" if unknown)
+  count         — Ball-strike count as 2-char string
+  pa            — "1" if this is a plate appearance
+  ab            — "1" if this is an at-bat
+  single/double/triple/hr — "1" if that outcome occurred
+  walk/strikeout/fly/ground/bip — "1" for event type flags
+  outs_pre      — Outs before play
+  outs_post     — Outs after play
+  br1_post      — Runner on 1st after play (Retrosheet ID)
+  br2_post      — Runner on 2nd after play
+  br3_post      — Runner on 3rd after play
+  pr1_post      — Pitcher responsible for runner on 1st
+  l1-l9         — Current lineup player IDs (batting order)
+  lf1-lf9       — Fielding position for each lineup spot
+  f2-f9         — Current fielder by defensive position (2=C through 9=RF)
+  pn            — Plate appearance number in game
+  date          — YYYYMMDD
+  gametype      — "regular", "championship", "worldseries", etc.
+  pbp           — "deduced" (reconstructed) or "y" (recorded)
+
+Note: Plays data coverage varies — early games often have "deduced" play-by-play
+with unknown counts ("?"). Modern games have complete data.
+
+
+================================================================================
+12. gameinfo.ndjson — 224,877 records
+================================================================================
+
+Detailed game metadata from event files: weather, umpires (all positions),
+winning/losing pitcher, time, attendance, conditions.
+
+Example (2024 World Series Game 5 — LAN @ NYA):
+{
+  "gid": "NYA202410300",
+  "visteam": "LAN",
+  "hometeam": "NYA",
+  "site": "NYC21",
+  "date": "20241030",
+  "number": "0",
+  "starttime": "8:08PM",
+  "daynight": "night",
+  "innings": "9",
+  "usedh": "true",
+  "timeofgame": "222",
+  "attendance": "49263",
+  "fieldcond": "unknown",
+  "precip": "none",
+  "sky": "cloudy",
+  "temp": "67",
+  "winddir": "tolf",
+  "windspeed": "5",
+  "oscorer": "sprej701",
+  "umphome": "rippm901",
+  "ump1b": "ticht901",
+  "ump2b": "torrc901",
+  "ump3b": "fleta901",
+  "umplf": "carlm901",
+  "umprf": "eddid901",
+  "wp": "treib001",
+  "lp": "kahnt001",
+  "save": "buehw001",
+  "gametype": "worldseries",
+  "vruns": "7",
+  "hruns": "6",
+  "wteam": "LAN",
+  "lteam": "NYA",
+  "line": "y",
+  "batteries": "both",
+  "lineups": "y",
+  "box": "y",
+  "pbp": "y",
+  "season": "2024"
+}
+
+More info for game entity
+
+Fields:
+  gid           — Game ID
+  visteam       — Visiting team code
+  hometeam      — Home team code
+  site          — Ballpark code
+  date          — YYYYMMDD
+  number        — Doubleheader game number
+  starttime     — Game start time (e.g., "8:08PM")
+  daynight      — "day" or "night"
+  innings       — Number of innings played
+  usedh         — "true"/"false" — designated hitter rule
+  timeofgame    — Duration in minutes (as string)
+  attendance    — Attendance (as string)
+  fieldcond     — "dry", "wet", "damp", "soaked", "unknown"
+  precip        — "none", "drizzle", "rain", "showers", "snow", "unknown"
+  sky           — "sunny", "cloudy", "overcast", "dome", "night", "unknown"
+  temp          — Temperature in Fahrenheit (as string, "0" if unknown)
+  winddir       — "tolf", "tocf", "torf", "ltor", "rtol", "fromcf", "fromlf", "fromrf", "unknown"
+  windspeed     — Wind speed in mph (as string, "-1" if unknown)
+  oscorer       — Official scorer Retrosheet ID
+  umphome       — Home plate umpire ID
+  ump1b/2b/3b   — Base umpire IDs
+  umplf/umprf   — Outfield umpire IDs (postseason only)
+  wp            — Winning pitcher ID
+  lp            — Losing pitcher ID
+  save          — Save pitcher ID
+  gametype      — Game type
+  vruns/hruns   — Final score (as strings)
+  wteam/lteam   — Winning/losing team codes
+  line          — "y" if linescore available
+  batteries     — "both", "vis", "home", "neither" — which teams have battery data
+  lineups       — "y" if lineup data available
+  box           — "y" if box score available
+  pbp           — "y" if play-by-play available
+  season        — Season year (as string)
+
+
+================================================================================
+13. allplayers.ndjson — 130,791 records
+================================================================================
+
+Per-season summary of games played at each position. One record per
+player-team-season combination.
+
+Example (Ohtani 2023 with Angels — DH + SP):
+{
+  "id": "ohtas001",
+  "last": "Ohtani",
+  "first": "Shohei",
+  "bat": "L",
+  "throw": "R",
+  "team": "ANA",
+  "g": "135",
+  "g_p": "23",
+  "g_sp": "23",
+  "g_rp": "0",
+  "g_c": "0",
+  "g_1b": "0",
+  "g_2b": "0",
+  "g_3b": "0",
+  "g_ss": "0",
+  "g_lf": "0",
+  "g_cf": "0",
+  "g_rf": "0",
+  "g_of": "0",
+  "g_dh": "135",
+  "g_ph": "0",
+  "g_pr": "0",
+  "first_g": "20230330",
+  "last_g": "20230903",
+  "season": "2023"
+}
+
+Info on a relation entity somewhere...
+
+Fields:
+  id         — Retrosheet person ID
+  last/first — Name
+  bat/throw  — Handedness
+  team       — Team code for this season
+  g          — Total games played
+  g_p        — Games as pitcher
+  g_sp       — Games as starting pitcher
+  g_rp       — Games as relief pitcher
+  g_c        — Games as catcher
+  g_1b-g_ss  — Games at each infield position
+  g_lf/cf/rf — Games at each outfield position
+  g_of       — Total outfield games
+  g_dh       — Games as designated hitter
+  g_ph       — Games as pinch hitter
+  g_pr       — Games as pinch runner
+  first_g    — First game of season (YYYYMMDD)
+  last_g     — Last game of season (YYYYMMDD)
+  season     — Season year (as string)
+
+
+================================================================================
+14. special_collections.json — 2,733 records across 7 categories
+================================================================================
+
+Notable game collections curated by Retrosheet. Each category contains
+full gameinfo records for qualifying games.
+
+Categories:
+  nohitters    — 359 no-hitter games
+  tripleplays  — 629 games featuring triple plays
+  cycles       — 319 games with a batting cycle
+  3HR          — 712 games where a player hit 3+ home runs
+  15K          — 349 games with 15+ strikeouts by a pitcher
+  20innings    — 48 games lasting 20+ innings
+  interracial  — 317 interracial/barnstorming exhibition games
+
+Example (2024 no-hitter — Cubs 12, Pirates 0):
+{
+  "gid": "CHN202409040",
+  "visteam": "PIT",
+  "hometeam": "CHN",
+  "site": "CHI11",
+  "date": "20240904",
+  "number": "0",
+  "starttime": "6:40PM",
+  "daynight": "night",
+  "innings": "9",
+  "tiebreaker": "2",
+  "usedh": "true",
+  "timeofgame": "130",
+  "attendance": "30369",
+  "fieldcond": "unknown",
+  "precip": "none",
+  "sky": "sunny",
+  "temp": "73",
+  "winddir": "ltor",
+  "windspeed": "3",
+  "oscorer": "jackj702",
+  "umphome": "jimee901",
+  "ump1b": "millb901",
+  "ump2b": "moorm901",
+  "ump3b": "eddid901",
+  "wp": "imans001",
+  "lp": "germd001",
+  "gametype": "regular",
+  "vruns": "0",
+  "hruns": "12",
+  "wteam": "CHN",
+  "lteam": "PIT",
+  "line": "y",
+  "batteries": "both",
+  "lineups": "y",
+  "box": "y",
+  "pbp": "y",
+  "season": "2024"
+}
+
+Same schema as gameinfo records (see section 12).
+
+
+================================================================================
+DATA OVERLAP & RELATIONSHIPS
+================================================================================
+
+Key joins between datasets:
+
+  players.retrosheet_id  <-->  rosters.player_id
+  players.retrosheet_id  <-->  batting/pitching/fielding.id
+  players.retrosheet_id  <-->  plays.batter / plays.pitcher
+  players.retrosheet_id  <-->  gamelogs.*_pitcher_id / *_manager_id / *_umpire_id
+  players.retrosheet_id  <-->  ejections.ejected_id / ejections.umpire_id
+  players.retrosheet_id  <-->  allplayers.id
+  players.retrosheet_id  <-->  gameinfo.wp / gameinfo.lp / gameinfo.umphome / etc.
+
+  teams.retrosheet_id    <-->  rosters.team_id
+  teams.retrosheet_id    <-->  gamelogs.visiting_team / gamelogs.home_team
+  teams.retrosheet_id    <-->  batting/pitching/fielding.team
+  teams.retrosheet_id    <-->  schedules.visiting_team / schedules.home_team
+
+  ballparks.retrosheet_id <--> gamelogs.park_id
+  ballparks.retrosheet_id <--> gameinfo.site
+  ballparks.retrosheet_id <--> plays.site
+
+  Game IDs link:
+    gamelogs (by date+teams)  <-->  batting/pitching/fielding.gid
+    gameinfo.gid              <-->  batting/pitching/fielding.gid
+    plays.gid                 <-->  batting/pitching/fielding.gid
+    ejections.game_id         <-->  gamelogs (by date+teams)
+
+Overlapping data between files:
+  - gamelogs + gameinfo both describe games — gamelogs has team totals,
+    gameinfo has weather/umpires/conditions. Join on game ID.
+  - rosters + allplayers both track player-team-season — allplayers adds
+    per-position game counts, rosters has primary position.
+  - schedules overlaps with gamelogs but adds postponement/makeup info
+    and extends into future seasons (through 2026).
+  - batting + pitching + fielding can be summed to match gamelog team totals.
+
+
+================================================================================
+RECORD COUNTS SUMMARY
+================================================================================
+
+  players.json:              26,961 people
+  teams.json:                   293 franchises
+  ballparks.json:               656 venues
+  rosters.json:             125,566 roster entries
+  gamelogs.ndjson:          237,580 games
+  ejections.json:            19,730 ejections
+  schedules.ndjson:         238,816 scheduled games
+  batting.ndjson:         5,746,328 batting lines
+  pitching.ndjson:        1,269,889 pitching lines
+  fielding.ndjson:        1,738,253 fielding lines
+  plays.ndjson:           6,515,744 play-by-play events
+  gameinfo.ndjson:          224,877 game metadata records
+  allplayers.ndjson:        130,791 player-season summaries
+  special_collections.json:   2,733 notable games (7 categories)
+
+  TOTAL: ~16.3 million records, 9.6 GB on disk

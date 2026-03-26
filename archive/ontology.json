@@ -1,0 +1,1416 @@
+{
+  "_comment": "Baseball ontology IDs for the Geo knowledge graph. IDs are stable \u2014 do not regenerate.",
+  "types": {
+    "_comment": "Types with 'existing: true' already exist in the space. Do not re-create.",
+    "person": {
+      "id": "7ed45f2bc48b419e8e4664d5ff680b0d",
+      "name": "Person",
+      "existing": true
+    },
+    "team": {
+      "id": "d94df75502ff40c18169ce0e65377ebe",
+      "name": "Team",
+      "existing": true
+    },
+    "city": {
+      "id": "01b05333941a4b00bc78fac5a15b467d",
+      "name": "City",
+      "existing": true
+    },
+    "state": {
+      "id": "dbe62a14ec954a7193767db33b661ff5",
+      "name": "State",
+      "existing": true
+    },
+    "country": {
+      "id": "42a0a7618c82459fad0834bfeb437cde",
+      "name": "Country",
+      "existing": true
+    },
+    "role": {
+      "id": "e4e366e9d5554b6892bf7358e824afd2",
+      "name": "Role",
+      "existing": true
+    },
+    "ballpark": {
+      "id": "2155204b2c294af8a9bff2481fe8d519",
+      "name": "Ballpark",
+      "description": "A baseball stadium or venue where games are played."
+    },
+    "season": {
+      "id": "4ce44af0f4b247d5bdc4d6b23024c7dc",
+      "name": "Season",
+      "description": "A calendar year of baseball activity."
+    },
+    "game": {
+      "id": "74cb153f63bf4e9ab32effd3d4e9ac3f",
+      "name": "Game",
+      "description": "A single baseball game between two teams."
+    },
+    "play": {
+      "id": "b34c4815a7e9494dbc7ed078fc09e5de",
+      "name": "Play",
+      "description": "A single plate appearance or at-bat within a game."
+    },
+    "batting_performance": {
+      "id": "239f6a3a0982482f8535c60deae25b35",
+      "name": "Batting Performance",
+      "description": "One player's batting statistics for a single game."
+    },
+    "pitching_performance": {
+      "id": "d2209e8725c541d683954f27e2c27074",
+      "name": "Pitching Performance",
+      "description": "One pitcher's statistics for a single game."
+    },
+    "fielding_performance": {
+      "id": "044473335a8742dab4001d33606305f8",
+      "name": "Fielding Performance",
+      "description": "One player's fielding statistics at a single position for a single game."
+    },
+    "pitch": {
+      "id": "24107f18609b42cab4c9dac2d1e10139",
+      "name": "Pitch",
+      "description": "A single pitch thrown during a plate appearance, with Statcast measurements."
+    },
+    "roster_entry": {
+      "id": "c0520aa47e5b47469b4f6cafe1eb4c0a",
+      "name": "Roster Entry",
+      "description": "A player's assignment to a team for a specific season."
+    },
+    "ejection": {
+      "id": "f7fa56da9fce48c5a41b6e7afb36d5a2",
+      "name": "Ejection",
+      "description": "A player, manager, or coach being removed from a game by an umpire."
+    },
+    "league": {
+      "id": "a155670b712e42aabe9491dbb6a49a7f",
+      "name": "League",
+      "description": "A professional baseball league or association."
+    },
+    "position": {
+      "id": "f1eed53166b94400a68f9904bc9736d7",
+      "name": "Position",
+      "description": "A defensive fielding position on the baseball diamond."
+    },
+    "game_type": {
+      "id": "3ef9c3f75daf4bf2a60f609ede42b1d9",
+      "name": "Game Type",
+      "description": "A classification of game context within a season."
+    },
+    "handedness": {
+      "id": "0cee14d4936445ef9156a9800f06f932",
+      "name": "Handedness",
+      "description": "A batting or throwing hand preference."
+    },
+    "pitch_type": {
+      "id": "117382a418224eddb0851b3c45f4f28e",
+      "name": "Pitch Type",
+      "description": "A classification of pitch based on grip, velocity, and movement."
+    },
+    "pitch_call": {
+      "id": "399146f048c94b00af97f077809a99ef",
+      "name": "Pitch Call",
+      "description": "The umpire's ruling or outcome of an individual pitch."
+    },
+    "play_event": {
+      "id": "f45f9fe7abdd4208832c6e99a24cdbd0",
+      "name": "Play Event",
+      "description": "The outcome category of a plate appearance."
+    },
+    "hit_trajectory": {
+      "id": "20391c1ace1a4925a31d2c5c2cd70edb",
+      "name": "Hit Trajectory",
+      "description": "The batted ball flight path classification."
+    },
+    "sky_condition": {
+      "id": "17495514c45442d29b8185e772d3f36b",
+      "name": "Sky Condition",
+      "description": "The weather and sky state during a game."
+    },
+    "surface_type": {
+      "id": "7c9086e2dbdc48948868861208d8c4c6",
+      "name": "Surface Type",
+      "description": "The playing field surface material."
+    },
+    "roof_type": {
+      "id": "c1ba7142ac4b492fbbfc150eecc76405",
+      "name": "Roof Type",
+      "description": "The stadium roof configuration."
+    }
+  },
+  "properties": {
+    "_comment": "Properties with 'existing: true' already exist in the space. Do not re-create.",
+    "name": {
+      "id": "a126ca530c8e48d5b88882c734c38935",
+      "name": "Name",
+      "dataType": "TEXT",
+      "existing": true
+    },
+    "description": {
+      "id": "9b1f76ff9711404c861e59dc3fa7d037",
+      "name": "Description",
+      "dataType": "TEXT",
+      "existing": true
+    },
+    "types": {
+      "id": "8f151ba4de204e3c9cb499ddf96f48f1",
+      "name": "Types",
+      "dataType": "RELATION",
+      "existing": true
+    },
+    "birth_date": {
+      "id": "60f8b943d9a742109356fc108ee7212c",
+      "name": "Birth date",
+      "dataType": "DATE",
+      "existing": true
+    },
+    "web_url": {
+      "id": "eed38e74e67946bf8a42ea3e4f8fb5fb",
+      "name": "Web URL",
+      "dataType": "TEXT",
+      "existing": true
+    },
+    "date_founded": {
+      "id": "41aa3d9847b64a97b7ec427e575b910e",
+      "name": "Date founded",
+      "dataType": "DATE",
+      "existing": true
+    },
+    "cover": {
+      "id": "34f535072e6b42c5a84443981a77cfa2",
+      "name": "Cover",
+      "dataType": "RELATION",
+      "existing": true
+    },
+    "avatar": {
+      "id": "1155befffad549b7a2e0da4777b8792c",
+      "name": "Avatar",
+      "dataType": "RELATION",
+      "existing": true
+    },
+    "geo_location": {
+      "id": "7cfc4990e0684b7798aa834137d02953",
+      "name": "Geo location",
+      "dataType": "POINT",
+      "existing": true
+    },
+    "retrosheet_id": {
+      "id": "0ac15797e8ad4e5f99f588e27358fcaa",
+      "name": "Retrosheet ID",
+      "dataType": "TEXT",
+      "description": "Unique identifier from Retrosheet (e.g., 'ohtas001' for players, 'NYA' for teams, 'BOS07' for parks)."
+    },
+    "mlb_id": {
+      "id": "11664edbb3f84c27ab47e439f6099b23",
+      "name": "MLB ID",
+      "dataType": "INTEGER",
+      "description": "Unique integer identifier from the MLB Stats API."
+    },
+    "city": {
+      "id": "8bf0f0e2cc8147f5a68ea4ee9e897de2",
+      "name": "City",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "city"
+      ],
+      "description": "The city associated with this entity."
+    },
+    "state": {
+      "id": "5fe01d45293e4501a580781fd5140c8f",
+      "name": "State",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "state"
+      ],
+      "description": "The state or province associated with this entity."
+    },
+    "country": {
+      "id": "0f7069f36b604c7d80d8bc6ebee3d32e",
+      "name": "Country",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "country"
+      ],
+      "description": "The country associated with this entity."
+    },
+    "league": {
+      "id": "099cb0fae0bb4d98a51ff24bdf3ed27b",
+      "name": "League",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "league"
+      ],
+      "description": "The baseball league this team belongs to."
+    },
+    "season": {
+      "id": "96493d2aff88458983fcb32f31755c53",
+      "name": "Season",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "season"
+      ],
+      "description": "The season this record belongs to."
+    },
+    "team": {
+      "id": "1eede582ed2e4a86a5271f600a8c3ac4",
+      "name": "Team",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "team"
+      ],
+      "description": "The team associated with this record."
+    },
+    "game": {
+      "id": "fc0a45edbb024e9fb728a14fa87499f6",
+      "name": "Game",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "game"
+      ],
+      "description": "The game this record belongs to."
+    },
+    "player": {
+      "id": "42de553823234a1ab0150875e3265568",
+      "name": "Player",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The player associated with this performance record."
+    },
+    "batter": {
+      "id": "59dd3d36a2b341a79eb58ec4be4bc792",
+      "name": "Batter",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The batter in this plate appearance."
+    },
+    "pitcher": {
+      "id": "17ada2f8ac714b98b05ff0955865b62a",
+      "name": "Pitcher",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The pitcher in this plate appearance."
+    },
+    "position": {
+      "id": "13f9b3e169d84e53bc48f9f0f7bc75af",
+      "name": "Position",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "position"
+      ],
+      "description": "The primary fielding position."
+    },
+    "game_type": {
+      "id": "db628dce3429400c84768c42dcd3d4c4",
+      "name": "Game Type",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "game_type"
+      ],
+      "description": "The classification of this game (regular season, postseason, etc.)."
+    },
+    "role": {
+      "id": "268d62f0fb2a4bb9a65d84b8029903b3",
+      "name": "Role",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "role"
+      ],
+      "description": "A career role held by this person (player, manager, coach, or umpire)."
+    },
+    "handedness": {
+      "id": "3d17606bc6d44ac98c8ec788e0c90a64",
+      "name": "Handedness",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "handedness"
+      ],
+      "description": "Batting or throwing hand preference (left, right, or switch)."
+    },
+    "pitch_type": {
+      "id": "1efc32e58e4b4497b9bce4975498aa62",
+      "name": "Pitch Type",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "pitch_type"
+      ],
+      "description": "The pitch classification based on grip, velocity, and movement."
+    },
+    "birth_city": {
+      "id": "553dcf9c154944d4ae2f68d3fcea7758",
+      "name": "Birth City",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "city"
+      ],
+      "description": "The city where this person was born."
+    },
+    "birth_state": {
+      "id": "d7d1a683bb274e4f858c8ea5ae6a94b6",
+      "name": "Birth State",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "state"
+      ],
+      "description": "The state or province where this person was born."
+    },
+    "birth_country": {
+      "id": "7948b4fe8a4e48a39c4fa1bce60f519e",
+      "name": "Birth Country",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "country"
+      ],
+      "description": "The country where this person was born."
+    },
+    "death_date": {
+      "id": "d4db249bf59042f2b642e30ee921b1a4",
+      "name": "Death Date",
+      "dataType": "DATE",
+      "description": "The date this person died."
+    },
+    "death_city": {
+      "id": "c83978174acc40cfb48377170caeccb1",
+      "name": "Death City",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "city"
+      ],
+      "description": "The city where this person died."
+    },
+    "death_state": {
+      "id": "a3cacac74b0a4037991a09a1275e8541",
+      "name": "Death State",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "state"
+      ],
+      "description": "The state or province where this person died."
+    },
+    "death_country": {
+      "id": "4cc232f4797c44bf85bb5c835df8515c",
+      "name": "Death Country",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "country"
+      ],
+      "description": "The country where this person died."
+    },
+    "bats": {
+      "id": "f574fc6f97c547afa6ca880c20251fb2",
+      "name": "Bats",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "handedness"
+      ],
+      "description": "Which side of the plate this person bats from."
+    },
+    "throws": {
+      "id": "3602d8849f104b5698afcbd037c6d64f",
+      "name": "Throws",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "handedness"
+      ],
+      "description": "Which hand this person throws with."
+    },
+    "height_inches": {
+      "id": "70082abca00b43a5bcc07170f739edce",
+      "name": "Height (Inches)",
+      "dataType": "INTEGER",
+      "description": "Height in inches."
+    },
+    "weight_lbs": {
+      "id": "fd9f99f7ed7e42c29ec228af592ae7c7",
+      "name": "Weight (Lbs)",
+      "dataType": "INTEGER",
+      "description": "Weight in pounds."
+    },
+    "hall_of_fame": {
+      "id": "706cd8b2293a40e4b2169278806488bc",
+      "name": "Hall of Fame",
+      "dataType": "BOOLEAN",
+      "description": "Whether this person has been inducted into the Baseball Hall of Fame."
+    },
+    "mlb_debut_date": {
+      "id": "dcb946a4b72f47469a5127b29d05bab6",
+      "name": "MLB Debut Date",
+      "dataType": "DATE",
+      "description": "The date of this person's first MLB game."
+    },
+    "last_game_date": {
+      "id": "a9839d88e5ce47b6996f2195946e65c6",
+      "name": "Last Game Date",
+      "dataType": "DATE",
+      "description": "The date of this person's most recent MLB game."
+    },
+    "nickname": {
+      "id": "85a6f2e05e21432da8631e2b6b489284",
+      "name": "Nickname",
+      "dataType": "TEXT",
+      "description": "The team's common nickname (e.g., 'Yankees', 'Dodgers')."
+    },
+    "first_year": {
+      "id": "dfd11971db984357a115023b12ea54f5",
+      "name": "First Year",
+      "dataType": "INTEGER",
+      "description": "The first year this team was active."
+    },
+    "last_year": {
+      "id": "09faece7a6864c94b97f2d56c0a77422",
+      "name": "Last Year",
+      "dataType": "INTEGER",
+      "description": "The last year this team was active (null if still active)."
+    },
+    "capacity": {
+      "id": "e0a0593adc84437ba8665d17ceb45bde",
+      "name": "Capacity",
+      "dataType": "INTEGER",
+      "description": "Seating capacity of the venue."
+    },
+    "surface_type": {
+      "id": "c9b73208c3374afeb09f6f488f030fbb",
+      "name": "Surface Type",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "surface_type"
+      ],
+      "description": "The playing surface material at this venue."
+    },
+    "roof_type": {
+      "id": "ae5fc2bcb1184cdb9372a3941c84d582",
+      "name": "Roof Type",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "roof_type"
+      ],
+      "description": "The roof configuration at this venue."
+    },
+    "left_field_distance": {
+      "id": "7c8b3a2db1f740e890ac1d691d231624",
+      "name": "Left Field Distance",
+      "dataType": "INTEGER",
+      "description": "Distance from home plate to the left field wall in feet."
+    },
+    "center_field_distance": {
+      "id": "dbc811f055534db1ad695a7513549543",
+      "name": "Center Field Distance",
+      "dataType": "INTEGER",
+      "description": "Distance from home plate to the center field wall in feet."
+    },
+    "right_field_distance": {
+      "id": "8f136610ef534a558b1572ed5edefa06",
+      "name": "Right Field Distance",
+      "dataType": "INTEGER",
+      "description": "Distance from home plate to the right field wall in feet."
+    },
+    "start_date": {
+      "id": "5baa1ff349284c29ab88b0cbf05a7ea0",
+      "name": "Start Date",
+      "dataType": "DATE",
+      "description": "The date of the first game played at this venue."
+    },
+    "end_date": {
+      "id": "ffe593f974554d1ea302212a2e79a79e",
+      "name": "End Date",
+      "dataType": "DATE",
+      "description": "The date of the last game played at this venue (null if still active)."
+    },
+    "year": {
+      "id": "ce3a3f86da684d759891c05aa9520064",
+      "name": "Year",
+      "dataType": "INTEGER",
+      "description": "The calendar year."
+    },
+    "game_date": {
+      "id": "4142fba580f844bfa4fa7f6fd63e0bee",
+      "name": "Game Date",
+      "dataType": "DATE",
+      "description": "The date the game was played."
+    },
+    "game_number": {
+      "id": "22e3ae7f55ef4999b1578c1ac4feb403",
+      "name": "Game Number",
+      "dataType": "INTEGER",
+      "description": "The game number for doubleheaders (0 for single games, 1 or 2 for doubleheaders)."
+    },
+    "home_team": {
+      "id": "ab19e5f4b5914ee1a1db7cac4f29a195",
+      "name": "Home Team",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "team"
+      ],
+      "description": "The home team in this game."
+    },
+    "away_team": {
+      "id": "0fa901ea177f4caa989ca393572c3559",
+      "name": "Away Team",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "team"
+      ],
+      "description": "The away team in this game."
+    },
+    "home_score": {
+      "id": "d01b34204eb7442091298d077522a22f",
+      "name": "Home Score",
+      "dataType": "INTEGER",
+      "description": "The home team's final run total."
+    },
+    "away_score": {
+      "id": "b85e2e4f26ff41e59d916716988cb2a9",
+      "name": "Away Score",
+      "dataType": "INTEGER",
+      "description": "The away team's final run total."
+    },
+    "venue": {
+      "id": "fc454dbfcff2489fb82fe100694ef6e4",
+      "name": "Venue",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "ballpark"
+      ],
+      "description": "The ballpark where this game was played."
+    },
+    "attendance": {
+      "id": "c2966dc3b74745928507c2a31d02b239",
+      "name": "Attendance",
+      "dataType": "INTEGER",
+      "description": "The number of people in attendance."
+    },
+    "duration_minutes": {
+      "id": "e3a2b035c9084e68b3fc065627c91756",
+      "name": "Duration (Minutes)",
+      "dataType": "INTEGER",
+      "description": "The game duration in minutes."
+    },
+    "day_game": {
+      "id": "1582a5ddb03243eb82925d186a166ce8",
+      "name": "Day Game",
+      "dataType": "BOOLEAN",
+      "description": "Whether this was a day game (true) or night game (false)."
+    },
+    "game_length_outs": {
+      "id": "85bf4010ef1740b2b5d4bf03ea0f5520",
+      "name": "Game Length (Outs)",
+      "dataType": "INTEGER",
+      "description": "Total outs recorded in the game (54 for a regulation 9-inning game)."
+    },
+    "winning_pitcher": {
+      "id": "1ec615e3be914ca69fce807b04275593",
+      "name": "Winning Pitcher",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The pitcher credited with the win."
+    },
+    "losing_pitcher": {
+      "id": "97724e21379b4238bf4b6d073b0ee171",
+      "name": "Losing Pitcher",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The pitcher charged with the loss."
+    },
+    "save_pitcher": {
+      "id": "30dd95358e2043639a97787cbeb81fe9",
+      "name": "Save Pitcher",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The pitcher credited with the save."
+    },
+    "home_starting_pitcher": {
+      "id": "270c4b8554fa4673abf0ad98e5a1346c",
+      "name": "Home Starting Pitcher",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The home team's starting pitcher."
+    },
+    "away_starting_pitcher": {
+      "id": "8f9a061493d448459c9b3d7f00ccdd43",
+      "name": "Away Starting Pitcher",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The away team's starting pitcher."
+    },
+    "home_manager": {
+      "id": "eed42b7cd6ac4bfd9b1bdfc5457071c8",
+      "name": "Home Manager",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The home team's manager."
+    },
+    "away_manager": {
+      "id": "1eca41af690647c79f612974487e2071",
+      "name": "Away Manager",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The away team's manager."
+    },
+    "home_plate_umpire": {
+      "id": "56d49687a2d341438efb49f9bcbcb5d0",
+      "name": "Home Plate Umpire",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The home plate umpire."
+    },
+    "temperature": {
+      "id": "4446683ea4ed4a088255bc225ae41558",
+      "name": "Temperature",
+      "dataType": "FLOAT",
+      "description": "The temperature at game time in degrees Fahrenheit."
+    },
+    "wind": {
+      "id": "c1d5346551484c998d0702b48635a57d",
+      "name": "Wind",
+      "dataType": "TEXT",
+      "description": "Wind conditions at game time."
+    },
+    "sky_conditions": {
+      "id": "d953c0fb6de04dd791bb02204b0af491",
+      "name": "Sky Conditions",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "sky_condition"
+      ],
+      "description": "The sky and weather conditions at game time."
+    },
+    "mlb_game_pk": {
+      "id": "9ee4d2f0703b4351bc5e55a44c310edb",
+      "name": "MLB Game PK",
+      "dataType": "INTEGER",
+      "description": "The MLB Stats API unique game identifier."
+    },
+    "retrosheet_game_id": {
+      "id": "793a93d327844dbfa111c193c41d4eea",
+      "name": "Retrosheet Game ID",
+      "dataType": "TEXT",
+      "description": "The Retrosheet unique game identifier (e.g., 'NYA202410300')."
+    },
+    "inning": {
+      "id": "34f81c834d164ae4a5363037ea39865a",
+      "name": "Inning",
+      "dataType": "INTEGER",
+      "description": "The inning number."
+    },
+    "top_of_inning": {
+      "id": "8d0a306312ef47869c051212548e46f0",
+      "name": "Top of Inning",
+      "dataType": "BOOLEAN",
+      "description": "Whether this is the top of the inning (true) or bottom (false)."
+    },
+    "at_bat_index": {
+      "id": "bb240e086a6f4bcbafcfdbb9ba060019",
+      "name": "At Bat Index",
+      "dataType": "INTEGER",
+      "description": "The sequential plate appearance index within the game (0-indexed)."
+    },
+    "event": {
+      "id": "0249e9c306a0473390c93eb1929832a9",
+      "name": "Event",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "play_event"
+      ],
+      "description": "The outcome of this plate appearance."
+    },
+    "rbi": {
+      "id": "97920ffaa81d4e4a8968ad7a1f43e124",
+      "name": "RBI",
+      "dataType": "INTEGER",
+      "description": "Runs batted in on this play or in this game."
+    },
+    "is_scoring_play": {
+      "id": "43e512d7f502444d84ef5fdc0b91408e",
+      "name": "Is Scoring Play",
+      "dataType": "BOOLEAN",
+      "description": "Whether any run scored on this play."
+    },
+    "outs_before": {
+      "id": "1959a9b0bedf4b04babdfee3c7aed4e0",
+      "name": "Outs Before",
+      "dataType": "INTEGER",
+      "description": "The number of outs before this play."
+    },
+    "outs_after": {
+      "id": "24057060f699433698e6bb3ee87a68b5",
+      "name": "Outs After",
+      "dataType": "INTEGER",
+      "description": "The number of outs after this play."
+    },
+    "balls": {
+      "id": "d5e0952bf89c48b99f53f62c75082c02",
+      "name": "Balls",
+      "dataType": "INTEGER",
+      "description": "The ball count at the time of the event."
+    },
+    "strikes": {
+      "id": "088da68b5576433da9cff8183eb2ac91",
+      "name": "Strikes",
+      "dataType": "INTEGER",
+      "description": "The strike count at the time of the event."
+    },
+    "batting_team": {
+      "id": "439715dbb6be4815be1e91efe0b11929",
+      "name": "Batting Team",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "team"
+      ],
+      "description": "The team at bat."
+    },
+    "pitching_team": {
+      "id": "ad3d4be3428c4468bdfcb0b12ef5b269",
+      "name": "Pitching Team",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "team"
+      ],
+      "description": "The team in the field."
+    },
+    "runner_on_1b": {
+      "id": "2155204b2c294af8a9bff2481fe8d520",
+      "name": "Runner on 1B",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The baserunner on first base after this play."
+    },
+    "runner_on_2b": {
+      "id": "2155204b2c294af8a9bff2481fe8d521",
+      "name": "Runner on 2B",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The baserunner on second base after this play."
+    },
+    "runner_on_3b": {
+      "id": "2155204b2c294af8a9bff2481fe8d522",
+      "name": "Runner on 3B",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The baserunner on third base after this play."
+    },
+    "lineup_position": {
+      "id": "2155204b2c294af8a9bff2481fe8d523",
+      "name": "Lineup Position",
+      "dataType": "INTEGER",
+      "description": "The batter's position in the batting order (1-9)."
+    },
+    "plate_appearances": {
+      "id": "2155204b2c294af8a9bff2481fe8d524",
+      "name": "Plate Appearances",
+      "dataType": "INTEGER",
+      "description": "Total plate appearances."
+    },
+    "at_bats": {
+      "id": "2155204b2c294af8a9bff2481fe8d525",
+      "name": "At Bats",
+      "dataType": "INTEGER",
+      "description": "Official at bats (plate appearances minus walks, HBP, sacrifices, and interference)."
+    },
+    "runs": {
+      "id": "2155204b2c294af8a9bff2481fe8d526",
+      "name": "Runs",
+      "dataType": "INTEGER",
+      "description": "Runs scored."
+    },
+    "hits": {
+      "id": "2155204b2c294af8a9bff2481fe8d527",
+      "name": "Hits",
+      "dataType": "INTEGER",
+      "description": "Base hits."
+    },
+    "doubles": {
+      "id": "2155204b2c294af8a9bff2481fe8d528",
+      "name": "Doubles",
+      "dataType": "INTEGER",
+      "description": "Two-base hits."
+    },
+    "triples": {
+      "id": "2155204b2c294af8a9bff2481fe8d529",
+      "name": "Triples",
+      "dataType": "INTEGER",
+      "description": "Three-base hits."
+    },
+    "home_runs": {
+      "id": "2155204b2c294af8a9bff2481fe8d530",
+      "name": "Home Runs",
+      "dataType": "INTEGER",
+      "description": "Home runs hit."
+    },
+    "walks": {
+      "id": "2155204b2c294af8a9bff2481fe8d531",
+      "name": "Walks",
+      "dataType": "INTEGER",
+      "description": "Bases on balls received."
+    },
+    "intentional_walks": {
+      "id": "2155204b2c294af8a9bff2481fe8d532",
+      "name": "Intentional Walks",
+      "dataType": "INTEGER",
+      "description": "Intentional bases on balls received."
+    },
+    "strikeouts": {
+      "id": "2155204b2c294af8a9bff2481fe8d533",
+      "name": "Strikeouts",
+      "dataType": "INTEGER",
+      "description": "Strikeouts (as batter or by pitcher)."
+    },
+    "stolen_bases": {
+      "id": "2155204b2c294af8a9bff2481fe8d534",
+      "name": "Stolen Bases",
+      "dataType": "INTEGER",
+      "description": "Bases stolen."
+    },
+    "caught_stealing": {
+      "id": "2155204b2c294af8a9bff2481fe8d535",
+      "name": "Caught Stealing",
+      "dataType": "INTEGER",
+      "description": "Times caught stealing."
+    },
+    "hit_by_pitch": {
+      "id": "2155204b2c294af8a9bff2481fe8d536",
+      "name": "Hit By Pitch",
+      "dataType": "INTEGER",
+      "description": "Times hit by a pitch."
+    },
+    "sacrifice_hits": {
+      "id": "2155204b2c294af8a9bff2481fe8d537",
+      "name": "Sacrifice Hits",
+      "dataType": "INTEGER",
+      "description": "Sacrifice bunts."
+    },
+    "sacrifice_flies": {
+      "id": "2155204b2c294af8a9bff2481fe8d538",
+      "name": "Sacrifice Flies",
+      "dataType": "INTEGER",
+      "description": "Sacrifice flies."
+    },
+    "grounded_into_dp": {
+      "id": "2155204b2c294af8a9bff2481fe8d539",
+      "name": "Grounded Into Double Play",
+      "dataType": "INTEGER",
+      "description": "Times grounded into a double play."
+    },
+    "is_designated_hitter": {
+      "id": "2155204b2c294af8a9bff2481fe8d540",
+      "name": "Is Designated Hitter",
+      "dataType": "BOOLEAN",
+      "description": "Whether the player batted as the designated hitter."
+    },
+    "innings_pitched": {
+      "id": "2155204b2c294af8a9bff2481fe8d541",
+      "name": "Innings Pitched",
+      "dataType": "FLOAT",
+      "description": "Innings pitched in baseball notation (e.g., 6.2 = 6\u2154 innings)."
+    },
+    "hits_allowed": {
+      "id": "2155204b2c294af8a9bff2481fe8d542",
+      "name": "Hits Allowed",
+      "dataType": "INTEGER",
+      "description": "Hits allowed by the pitcher."
+    },
+    "runs_allowed": {
+      "id": "2155204b2c294af8a9bff2481fe8d543",
+      "name": "Runs Allowed",
+      "dataType": "INTEGER",
+      "description": "Runs allowed by the pitcher."
+    },
+    "earned_runs": {
+      "id": "2155204b2c294af8a9bff2481fe8d544",
+      "name": "Earned Runs",
+      "dataType": "INTEGER",
+      "description": "Earned runs allowed by the pitcher."
+    },
+    "home_runs_allowed": {
+      "id": "2155204b2c294af8a9bff2481fe8d545",
+      "name": "Home Runs Allowed",
+      "dataType": "INTEGER",
+      "description": "Home runs allowed by the pitcher."
+    },
+    "walks_issued": {
+      "id": "2155204b2c294af8a9bff2481fe8d546",
+      "name": "Walks Issued",
+      "dataType": "INTEGER",
+      "description": "Walks issued by the pitcher."
+    },
+    "batters_faced": {
+      "id": "2155204b2c294af8a9bff2481fe8d547",
+      "name": "Batters Faced",
+      "dataType": "INTEGER",
+      "description": "Total batters faced by the pitcher."
+    },
+    "wild_pitches": {
+      "id": "2155204b2c294af8a9bff2481fe8d548",
+      "name": "Wild Pitches",
+      "dataType": "INTEGER",
+      "description": "Wild pitches thrown."
+    },
+    "balks": {
+      "id": "2155204b2c294af8a9bff2481fe8d549",
+      "name": "Balks",
+      "dataType": "INTEGER",
+      "description": "Balks committed."
+    },
+    "pitches_thrown": {
+      "id": "2155204b2c294af8a9bff2481fe8d550",
+      "name": "Pitches Thrown",
+      "dataType": "INTEGER",
+      "description": "Total pitches thrown in the game."
+    },
+    "game_started": {
+      "id": "2155204b2c294af8a9bff2481fe8d551",
+      "name": "Game Started",
+      "dataType": "BOOLEAN",
+      "description": "Whether the pitcher started this game."
+    },
+    "complete_game": {
+      "id": "2155204b2c294af8a9bff2481fe8d552",
+      "name": "Complete Game",
+      "dataType": "BOOLEAN",
+      "description": "Whether the pitcher pitched the entire game."
+    },
+    "shutout": {
+      "id": "2155204b2c294af8a9bff2481fe8d553",
+      "name": "Shutout",
+      "dataType": "BOOLEAN",
+      "description": "Whether the pitcher completed a shutout."
+    },
+    "win": {
+      "id": "2155204b2c294af8a9bff2481fe8d554",
+      "name": "Win",
+      "dataType": "BOOLEAN",
+      "description": "Whether the pitcher was credited with the win."
+    },
+    "loss": {
+      "id": "2155204b2c294af8a9bff2481fe8d555",
+      "name": "Loss",
+      "dataType": "BOOLEAN",
+      "description": "Whether the pitcher was charged with the loss."
+    },
+    "save": {
+      "id": "2155204b2c294af8a9bff2481fe8d556",
+      "name": "Save",
+      "dataType": "BOOLEAN",
+      "description": "Whether the pitcher was credited with the save."
+    },
+    "pitching_sequence": {
+      "id": "2155204b2c294af8a9bff2481fe8d557",
+      "name": "Pitching Sequence",
+      "dataType": "INTEGER",
+      "description": "The pitcher's order of appearance (1 = starter, 2+ = relievers)."
+    },
+    "fielding_position": {
+      "id": "2155204b2c294af8a9bff2481fe8d558",
+      "name": "Fielding Position",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "position"
+      ],
+      "description": "The defensive position played during this fielding stint."
+    },
+    "innings_fielded": {
+      "id": "2155204b2c294af8a9bff2481fe8d559",
+      "name": "Innings Fielded",
+      "dataType": "FLOAT",
+      "description": "Innings played at this position in baseball notation."
+    },
+    "putouts": {
+      "id": "2155204b2c294af8a9bff2481fe8d560",
+      "name": "Putouts",
+      "dataType": "INTEGER",
+      "description": "Outs directly recorded by the fielder (catching fly balls, tagging runners, force outs)."
+    },
+    "assists": {
+      "id": "2155204b2c294af8a9bff2481fe8d561",
+      "name": "Assists",
+      "dataType": "INTEGER",
+      "description": "Throws or touches of the ball that led to a putout by another fielder."
+    },
+    "errors": {
+      "id": "2155204b2c294af8a9bff2481fe8d562",
+      "name": "Errors",
+      "dataType": "INTEGER",
+      "description": "Misplays that allowed a batter or runner to advance."
+    },
+    "double_plays": {
+      "id": "2155204b2c294af8a9bff2481fe8d563",
+      "name": "Double Plays",
+      "dataType": "INTEGER",
+      "description": "Double plays participated in."
+    },
+    "play": {
+      "id": "2155204b2c294af8a9bff2481fe8d564",
+      "name": "Play",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "play"
+      ],
+      "description": "The plate appearance this pitch belongs to."
+    },
+    "pitch_number": {
+      "id": "2155204b2c294af8a9bff2481fe8d565",
+      "name": "Pitch Number",
+      "dataType": "INTEGER",
+      "description": "The sequential pitch number within the plate appearance."
+    },
+    "pitch_call": {
+      "id": "2155204b2c294af8a9bff2481fe8d566",
+      "name": "Pitch Call",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "pitch_call"
+      ],
+      "description": "The umpire's ruling on this pitch."
+    },
+    "start_speed": {
+      "id": "2155204b2c294af8a9bff2481fe8d567",
+      "name": "Start Speed",
+      "dataType": "FLOAT",
+      "description": "Pitch velocity at release point in mph."
+    },
+    "end_speed": {
+      "id": "2155204b2c294af8a9bff2481fe8d568",
+      "name": "End Speed",
+      "dataType": "FLOAT",
+      "description": "Pitch velocity at home plate in mph."
+    },
+    "spin_rate": {
+      "id": "2155204b2c294af8a9bff2481fe8d569",
+      "name": "Spin Rate",
+      "dataType": "INTEGER",
+      "description": "Pitch spin rate in revolutions per minute."
+    },
+    "spin_direction": {
+      "id": "2155204b2c294af8a9bff2481fe8d570",
+      "name": "Spin Direction",
+      "dataType": "INTEGER",
+      "description": "Pitch spin axis direction in degrees (0-360)."
+    },
+    "strike_zone": {
+      "id": "2155204b2c294af8a9bff2481fe8d571",
+      "name": "Strike Zone",
+      "dataType": "INTEGER",
+      "description": "Strike zone region from the catcher's perspective (1-9 in zone, 11-14 out of zone)."
+    },
+    "plate_x": {
+      "id": "2155204b2c294af8a9bff2481fe8d572",
+      "name": "Plate X",
+      "dataType": "FLOAT",
+      "description": "Horizontal pitch location at the plate in feet from center."
+    },
+    "plate_z": {
+      "id": "2155204b2c294af8a9bff2481fe8d573",
+      "name": "Plate Z",
+      "dataType": "FLOAT",
+      "description": "Vertical pitch location at the plate in feet from ground."
+    },
+    "launch_speed": {
+      "id": "2155204b2c294af8a9bff2481fe8d574",
+      "name": "Launch Speed",
+      "dataType": "FLOAT",
+      "description": "Exit velocity off the bat in mph."
+    },
+    "launch_angle": {
+      "id": "2155204b2c294af8a9bff2481fe8d575",
+      "name": "Launch Angle",
+      "dataType": "FLOAT",
+      "description": "Launch angle off the bat in degrees."
+    },
+    "hit_distance": {
+      "id": "2155204b2c294af8a9bff2481fe8d576",
+      "name": "Hit Distance",
+      "dataType": "FLOAT",
+      "description": "Projected total distance of the batted ball in feet."
+    },
+    "hit_trajectory": {
+      "id": "2155204b2c294af8a9bff2481fe8d577",
+      "name": "Hit Trajectory",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "hit_trajectory"
+      ],
+      "description": "The batted ball flight path classification."
+    },
+    "ejected_person": {
+      "id": "2155204b2c294af8a9bff2481fe8d578",
+      "name": "Ejected Person",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The person who was ejected from the game."
+    },
+    "ejecting_umpire": {
+      "id": "2155204b2c294af8a9bff2481fe8d579",
+      "name": "Ejecting Umpire",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "person"
+      ],
+      "description": "The umpire who issued the ejection."
+    },
+    "ejection_inning": {
+      "id": "2155204b2c294af8a9bff2481fe8d580",
+      "name": "Ejection Inning",
+      "dataType": "INTEGER",
+      "description": "The inning in which the ejection occurred."
+    },
+    "ejection_reason": {
+      "id": "2155204b2c294af8a9bff2481fe8d581",
+      "name": "Ejection Reason",
+      "dataType": "TEXT",
+      "description": "The reason for the ejection."
+    },
+    "ejected_role": {
+      "id": "2155204b2c294af8a9bff2481fe8d582",
+      "name": "Ejected Role",
+      "dataType": "RELATION",
+      "toEntityTypes": [
+        "role"
+      ],
+      "description": "The role of the ejected person (player, manager, or coach)."
+    }
+  },
+  "type_schemas": {
+    "_comment": "Maps each type to its property keys (from the properties section above). System properties (name, description, types) are implicit on all types.",
+    "person": [
+      "retrosheet_id",
+      "mlb_id",
+      "birth_date",
+      "birth_city",
+      "birth_state",
+      "birth_country",
+      "death_date",
+      "death_city",
+      "death_state",
+      "death_country",
+      "bats",
+      "throws",
+      "height_inches",
+      "weight_lbs",
+      "hall_of_fame",
+      "mlb_debut_date",
+      "last_game_date",
+      "role"
+    ],
+    "team": [
+      "retrosheet_id",
+      "mlb_id",
+      "city",
+      "league",
+      "nickname",
+      "first_year",
+      "last_year"
+    ],
+    "ballpark": [
+      "retrosheet_id",
+      "mlb_id",
+      "city",
+      "state",
+      "geo_location",
+      "capacity",
+      "surface_type",
+      "roof_type",
+      "left_field_distance",
+      "center_field_distance",
+      "right_field_distance",
+      "start_date",
+      "end_date"
+    ],
+    "season": [
+      "year"
+    ],
+    "game": [
+      "retrosheet_game_id",
+      "mlb_game_pk",
+      "game_date",
+      "game_number",
+      "day_game",
+      "game_type",
+      "home_team",
+      "away_team",
+      "venue",
+      "season",
+      "home_score",
+      "away_score",
+      "game_length_outs",
+      "attendance",
+      "duration_minutes",
+      "winning_pitcher",
+      "losing_pitcher",
+      "save_pitcher",
+      "home_starting_pitcher",
+      "away_starting_pitcher",
+      "home_manager",
+      "away_manager",
+      "home_plate_umpire",
+      "temperature",
+      "wind",
+      "sky_conditions"
+    ],
+    "play": [
+      "game",
+      "batter",
+      "pitcher",
+      "batting_team",
+      "pitching_team",
+      "inning",
+      "top_of_inning",
+      "at_bat_index",
+      "event",
+      "rbi",
+      "is_scoring_play",
+      "outs_before",
+      "outs_after",
+      "balls",
+      "strikes",
+      "runner_on_1b",
+      "runner_on_2b",
+      "runner_on_3b"
+    ],
+    "batting_performance": [
+      "player",
+      "game",
+      "team",
+      "season",
+      "lineup_position",
+      "plate_appearances",
+      "at_bats",
+      "runs",
+      "hits",
+      "doubles",
+      "triples",
+      "home_runs",
+      "rbi",
+      "walks",
+      "intentional_walks",
+      "strikeouts",
+      "stolen_bases",
+      "caught_stealing",
+      "hit_by_pitch",
+      "sacrifice_hits",
+      "sacrifice_flies",
+      "grounded_into_dp",
+      "is_designated_hitter"
+    ],
+    "pitching_performance": [
+      "player",
+      "game",
+      "team",
+      "season",
+      "pitching_sequence",
+      "innings_pitched",
+      "hits_allowed",
+      "runs_allowed",
+      "earned_runs",
+      "home_runs_allowed",
+      "walks_issued",
+      "strikeouts",
+      "batters_faced",
+      "pitches_thrown",
+      "wild_pitches",
+      "balks",
+      "game_started",
+      "complete_game",
+      "shutout",
+      "win",
+      "loss",
+      "save"
+    ],
+    "fielding_performance": [
+      "player",
+      "game",
+      "team",
+      "season",
+      "fielding_position",
+      "innings_fielded",
+      "putouts",
+      "assists",
+      "errors",
+      "double_plays"
+    ],
+    "pitch": [
+      "play",
+      "game",
+      "pitcher",
+      "batter",
+      "pitch_number",
+      "pitch_type",
+      "pitch_call",
+      "start_speed",
+      "end_speed",
+      "spin_rate",
+      "spin_direction",
+      "strike_zone",
+      "plate_x",
+      "plate_z",
+      "launch_speed",
+      "launch_angle",
+      "hit_distance",
+      "hit_trajectory"
+    ],
+    "roster_entry": [
+      "player",
+      "team",
+      "season",
+      "position",
+      "year"
+    ],
+    "ejection": [
+      "game",
+      "ejected_person",
+      "ejected_role",
+      "team",
+      "ejecting_umpire",
+      "ejection_inning",
+      "ejection_reason"
+    ],
+    "city": [
+      "state",
+      "country",
+      "geo_location"
+    ],
+    "state": [
+      "country"
+    ],
+    "country": [],
+    "league": [],
+    "position": [],
+    "game_type": [],
+    "role": [],
+    "handedness": [],
+    "pitch_type": [],
+    "pitch_call": [],
+    "play_event": [],
+    "hit_trajectory": [],
+    "sky_condition": [],
+    "surface_type": [],
+    "roof_type": []
+  }
+}

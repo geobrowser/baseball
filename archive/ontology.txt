@@ -1,0 +1,1389 @@
+Baseball Ontology for Geo Knowledge Graph
+==========================================
+
+Maps MLB Stats API live data (primary) + Retrosheet historical data (backfill)
+to GRC-20 entities.
+
+Data source priority:
+  - MLB Stats API is the primary source — live, current-season, and Statcast data.
+  - Retrosheet backfills historical depth — pre-2015 play-by-play, game-level stats
+    going back to 1871, Negro League data, and curated collections (no-hitters, etc.).
+  - Where both sources cover the same entity (e.g., a 2024 game), MLB API is preferred
+    for richer fields (Statcast, weather strings, venue coordinates) and Retrosheet
+    supplements with fields MLB API lacks (Retrosheet game IDs, umpire crews, manager IDs).
+  - Cross-referencing uses the Chadwick Bureau register for player ID mapping
+    (MLB integer IDs ↔ Retrosheet string IDs).
+
+Conventions:
+  - "Name", "Types", and "Description" are system properties (already exist in root space).
+  - All Type schemas implicitly include Name, Types, Description — listed below only when
+    additional properties are defined.
+  - "Relation" data type means the property points to another entity (via a Types-style relation).
+  - Reusable properties (used by multiple types) are defined once and shared.
+  - Prefer relations to reusable entities over text values. Text is only used for
+    truly free-form data (descriptions, event codes, wind strings) or per-entity
+    identifiers (Retrosheet ID, nicknames).
+  - Each property notes its source: [MLB], [RS], or [Both] where it matters.
+
+
+================================================================================
+PROPERTY ENTITIES
+================================================================================
+
+Each property below becomes an entity with Types: Property in the knowledge graph.
+The "Data type" is set via a Data Type relation on the property entity.
+"To entity types" is set via a To Entity Types relation (hints for relation targets).
+
+── Shared / Reusable Relation Properties ──────────────────────────────────────
+
+Name: City
+Types: Property
+Data type: Relation
+To entity types: City
+Description: City entity (e.g., "New York", "Cincinnati", "Santo Domingo")
+
+Name: State
+Types: Property
+Data type: Relation
+To entity types: State
+Description: State/province entity (e.g., "California", "Ohio", "Distrito Nacional")
+
+Name: Country
+Types: Property
+Data type: Relation
+To entity types: Country
+Description: Country entity (e.g., "USA", "Japan", "Dominican Republic")
+
+Name: League
+Types: Property
+Data type: Relation
+To entity types: League
+Description: League entity (e.g., "American League", "National League", "Eastern Colored League")
+
+Name: Season
+Types: Property
+Data type: Relation
+To entity types: Season
+Description: The season this record belongs to.
+
+Name: Team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The team associated with this record.
+
+Name: Game
+Types: Property
+Data type: Relation
+To entity types: Game
+Description: The game this record belongs to.
+
+Name: Player
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The player associated with this performance record.
+
+Name: Batter
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The batter in this plate appearance.
+
+Name: Pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The pitcher in this plate appearance.
+
+Name: Position
+Types: Property
+Data type: Relation
+To entity types: Position
+Description: Fielding position entity (e.g., "Catcher", "Shortstop", "Pitcher")
+
+Name: Game Type
+Types: Property
+Data type: Relation
+To entity types: Game Type
+Description: Game classification entity (e.g., "Regular Season", "World Series", "All-Star Game")
+
+Name: Role
+Types: Property
+Data type: Relation
+To entity types: Role
+Description: Career role entity (e.g., "Player", "Manager", "Coach", "Umpire")
+
+Name: Handedness
+Types: Property
+Data type: Relation
+To entity types: Handedness
+Description: Batting or throwing hand entity ("Left", "Right", "Switch")
+
+Name: Pitch Type
+Types: Property
+Data type: Relation
+To entity types: Pitch Type
+Description: Pitch classification entity (e.g., "Four-Seam Fastball", "Slider", "Changeup")
+
+
+── Shared / Reusable ID Properties ────────────────────────────────────────────
+
+Name: Retrosheet ID
+Types: Property
+Data type: Text
+Description: Unique identifier from Retrosheet (e.g., "ohtas001" for players, "NYA" for teams, "BOS07" for parks)
+
+Name: MLB ID
+Types: Property
+Data type: Integer
+Description: Unique identifier from MLB Stats API (integer, e.g., 660271 for Ohtani)
+
+
+── Person Properties ──────────────────────────────────────────────────────────
+
+Name: Birth City
+Types: Property
+Data type: Relation
+To entity types: City
+Description: The city where this person was born.
+
+Name: Birth State
+Types: Property
+Data type: Relation
+To entity types: State
+Description: The state or province where this person was born.
+
+Name: Birth Country
+Types: Property
+Data type: Relation
+To entity types: Country
+Description: The country where this person was born.
+
+Name: Death Date
+Types: Property
+Data type: Date
+Description: The date this person died.
+
+Name: Death City
+Types: Property
+Data type: Relation
+To entity types: City
+Description: The city where this person died.
+
+Name: Death State
+Types: Property
+Data type: Relation
+To entity types: State
+Description: The state or province where this person died.
+
+Name: Death Country
+Types: Property
+Data type: Relation
+To entity types: Country
+Description: The country where this person died.
+
+Name: Bats
+Types: Property
+Data type: Relation
+To entity types: Handedness
+Description: Batting hand
+
+Name: Throws
+Types: Property
+Data type: Relation
+To entity types: Handedness
+Description: Throwing hand
+
+Name: Height (inches)
+Types: Property
+Data type: Integer
+
+Name: Weight (lbs)
+Types: Property
+Data type: Integer
+
+Name: Hall of Fame
+Types: Property
+Data type: Boolean
+Description: Whether this person has been inducted into the Baseball Hall of Fame.
+
+Name: MLB Debut Date
+Types: Property
+Data type: Date
+Description: The date of this person's first MLB game.
+
+Name: Last Game Date
+Types: Property
+Data type: Date
+Description: The date of this person's most recent MLB game.
+
+
+── Team Properties ────────────────────────────────────────────────────────────
+
+Name: Nickname
+Types: Property
+Data type: Text
+Description: Team nickname (e.g., "Yankees", "Dodgers")
+
+Name: First Year
+Types: Property
+Data type: Integer
+Description: The first year this team was active.
+
+Name: Last Year
+Types: Property
+Data type: Integer
+Description: The last year this team was active (null if still active).
+
+
+── Ballpark Properties ────────────────────────────────────────────────────────
+
+Geo Entity ID: 7cfc4990e0684b7798aa834137d02953
+Name: Geo location
+Types: Property
+Data type: Point
+Renderable type: Geo location
+Description: WGS84 lat/long coordinates (from MLB API venue data)
+
+Name: Capacity
+Types: Property
+Data type: Integer
+Description: Seating capacity of the venue.
+
+Name: Surface Type
+Types: Property
+Data type: Relation
+To entity types: Surface Type
+Description: Playing surface entity ("Grass" or "Artificial Turf")
+
+Name: Roof Type
+Types: Property
+Data type: Relation
+To entity types: Roof Type
+Description: Roof configuration entity ("Open", "Retractable", "Dome")
+
+Name: Left Field Distance
+Types: Property
+Data type: Integer
+Description: Distance to left field wall in feet
+
+Name: Center Field Distance
+Types: Property
+Data type: Integer
+Description: Distance from home plate to the center field wall in feet.
+
+Name: Right Field Distance
+Types: Property
+Data type: Integer
+Description: Distance from home plate to the right field wall in feet.
+
+Name: Start Date
+Types: Property
+Data type: Date
+Description: Date of first game at this venue
+
+Name: End Date
+Types: Property
+Data type: Date
+Description: Date of last game (null if still active)
+
+
+── Game Properties ────────────────────────────────────────────────────────────
+
+Name: Game Date
+Types: Property
+Data type: Date
+Description: The date the game was played.
+
+Name: Game Number
+Types: Property
+Data type: Integer
+Description: 0 for single game, 1 or 2 for doubleheader
+
+Name: Home Team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The home team in this game.
+
+Name: Away Team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The away team in this game.
+
+Name: Home Score
+Types: Property
+Data type: Integer
+Description: The home team's final run total.
+
+Name: Away Score
+Types: Property
+Data type: Integer
+Description: The away team's final run total.
+
+Name: Venue
+Types: Property
+Data type: Relation
+To entity types: Ballpark
+Description: The ballpark where this game was played.
+
+Name: Attendance
+Types: Property
+Data type: Integer
+Description: The number of people in attendance.
+
+Name: Duration (minutes)
+Types: Property
+Data type: Integer
+
+Name: Day Game
+Types: Property
+Data type: Boolean
+Description: true = day game, false = night game
+
+Name: Game Length (outs)
+Types: Property
+Data type: Integer
+Description: Total outs recorded (54 = regulation 9-inning game)
+
+Name: Winning Pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The pitcher credited with the win.
+
+Name: Losing Pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The pitcher charged with the loss.
+
+Name: Save Pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The pitcher credited with the save.
+
+Name: Home Starting Pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The home team's starting pitcher.
+
+Name: Away Starting Pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The away team's starting pitcher.
+
+Name: Home Manager
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The home team's manager.
+
+Name: Away Manager
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The away team's manager.
+
+Name: Home Plate Umpire
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The home plate umpire.
+
+Name: Temperature
+Types: Property
+Data type: Float64
+Description: Temperature in Fahrenheit
+
+Name: Wind
+Types: Property
+Data type: Text
+Description: Free-text wind description (e.g., "6 mph, In From CF")
+
+Name: Sky Conditions
+Types: Property
+Data type: Relation
+To entity types: Sky Condition
+Description: Sky/weather entity ("Sunny", "Cloudy", "Overcast", "Dome", "Night")
+
+Name: MLB Game PK
+Types: Property
+Data type: Integer
+Description: MLB Stats API game identifier (gamePk)
+
+Name: Retrosheet Game ID
+Types: Property
+Data type: Text
+Description: Retrosheet game ID (e.g., "NYA202410300")
+
+
+── Play Properties ────────────────────────────────────────────────────────────
+
+Name: Inning
+Types: Property
+Data type: Integer
+Description: The inning number.
+
+Name: Top of Inning
+Types: Property
+Data type: Boolean
+Description: true = top (away batting), false = bottom (home batting)
+
+Name: At Bat Index
+Types: Property
+Data type: Integer
+Description: Sequential at-bat index within the game (0-indexed)
+
+Name: Event
+Types: Property
+Data type: Relation
+To entity types: Play Event
+Description: Play outcome entity (e.g., "Single", "Home Run", "Strikeout", "Groundout")
+
+Name: RBI
+Types: Property
+Data type: Integer
+Description: Runs batted in on this play or in this game.
+
+Name: Is Scoring Play
+Types: Property
+Data type: Boolean
+Description: Whether any run scored on this play.
+
+Name: Outs Before
+Types: Property
+Data type: Integer
+Description: The number of outs before this play.
+
+Name: Outs After
+Types: Property
+Data type: Integer
+Description: The number of outs after this play.
+
+Name: Balls
+Types: Property
+Data type: Integer
+Description: Ball count at time of event
+
+Name: Strikes
+Types: Property
+Data type: Integer
+Description: Strike count at time of event
+
+Name: Batting Team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The team at bat.
+
+Name: Pitching Team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The team in the field.
+
+Name: Runner on 1B
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The baserunner on first base after this play.
+
+Name: Runner on 2B
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The baserunner on second base after this play.
+
+Name: Runner on 3B
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The baserunner on third base after this play.
+
+
+── Batting Performance Properties ─────────────────────────────────────────────
+
+Name: Lineup Position
+Types: Property
+Data type: Integer
+Description: Batting order position (1-9)
+
+Name: Plate Appearances
+Types: Property
+Data type: Integer
+Description: Total plate appearances.
+
+Name: At Bats
+Types: Property
+Data type: Integer
+Description: Official at bats (plate appearances minus walks, HBP, sacrifices, and interference).
+
+Name: Runs
+Types: Property
+Data type: Integer
+Description: Runs scored.
+
+Name: Hits
+Types: Property
+Data type: Integer
+Description: Base hits.
+
+Name: Doubles
+Types: Property
+Data type: Integer
+Description: Two-base hits.
+
+Name: Triples
+Types: Property
+Data type: Integer
+Description: Three-base hits.
+
+Name: Home Runs
+Types: Property
+Data type: Integer
+Description: Home runs hit.
+
+Name: Walks
+Types: Property
+Data type: Integer
+Description: Bases on balls received.
+
+Name: Intentional Walks
+Types: Property
+Data type: Integer
+Description: Intentional bases on balls received.
+
+Name: Strikeouts
+Types: Property
+Data type: Integer
+Description: Strikeouts (as batter or by pitcher).
+
+Name: Stolen Bases
+Types: Property
+Data type: Integer
+Description: Bases stolen.
+
+Name: Caught Stealing
+Types: Property
+Data type: Integer
+Description: Times caught stealing.
+
+Name: Hit By Pitch
+Types: Property
+Data type: Integer
+Description: Times hit by a pitch.
+
+Name: Sacrifice Hits
+Types: Property
+Data type: Integer
+Description: Sacrifice bunts.
+
+Name: Sacrifice Flies
+Types: Property
+Data type: Integer
+Description: Sacrifice flies.
+
+Name: Grounded Into Double Play
+Types: Property
+Data type: Integer
+Description: Times grounded into a double play.
+
+Name: Is Designated Hitter
+Types: Property
+Data type: Boolean
+Description: Whether the player batted as the designated hitter.
+
+
+── Pitching Performance Properties ────────────────────────────────────────────
+
+Name: Innings Pitched
+Types: Property
+Data type: Float64
+Description: Innings pitched in baseball notation (e.g., 9.0, 6.2 = 6⅔, 0.1 = ⅓). Decimal part is base-3: .1 = ⅓ inning, .2 = ⅔ inning.
+
+Name: Hits Allowed
+Types: Property
+Data type: Integer
+Description: Hits allowed by the pitcher.
+
+Name: Runs Allowed
+Types: Property
+Data type: Integer
+Description: Runs allowed by the pitcher.
+
+Name: Earned Runs
+Types: Property
+Data type: Integer
+Description: Earned runs allowed by the pitcher.
+
+Name: Home Runs Allowed
+Types: Property
+Data type: Integer
+Description: Home runs allowed by the pitcher.
+
+Name: Walks Issued
+Types: Property
+Data type: Integer
+Description: Walks issued by the pitcher.
+
+Name: Batters Faced
+Types: Property
+Data type: Integer
+Description: Total batters faced by the pitcher.
+
+Name: Wild Pitches
+Types: Property
+Data type: Integer
+Description: Wild pitches thrown.
+
+Name: Balks
+Types: Property
+Data type: Integer
+Description: Balks committed.
+
+Name: Pitches Thrown
+Types: Property
+Data type: Integer
+Description: Total pitch count (MLB API only, not in Retrosheet)
+
+Name: Game Started
+Types: Property
+Data type: Boolean
+Description: Whether the pitcher started this game.
+
+Name: Complete Game
+Types: Property
+Data type: Boolean
+Description: Whether the pitcher pitched the entire game.
+
+Name: Shutout
+Types: Property
+Data type: Boolean
+Description: Whether the pitcher completed a shutout.
+
+Name: Win
+Types: Property
+Data type: Boolean
+Description: Whether the pitcher was credited with the win.
+
+Name: Loss
+Types: Property
+Data type: Boolean
+Description: Whether the pitcher was charged with the loss.
+
+Name: Save
+Types: Property
+Data type: Boolean
+Description: Whether the pitcher was credited with the save.
+
+Name: Pitching Sequence
+Types: Property
+Data type: Integer
+Description: Order of appearance (1 = starter, 2+ = relievers)
+
+
+── Fielding Performance Properties ────────────────────────────────────────────
+
+Name: Fielding Position
+Types: Property
+Data type: Relation
+To entity types: Position
+Description: Defensive position entity for this fielding stint
+
+Name: Innings Fielded
+Types: Property
+Data type: Float64
+Description: Innings fielded in baseball notation (e.g., 9.0, 6.2 = 6⅔). Same base-3 convention as Innings Pitched.
+
+Name: Putouts
+Types: Property
+Data type: Integer
+Description: Outs directly recorded by the fielder (catching fly balls, tagging runners, force outs).
+
+Name: Assists
+Types: Property
+Data type: Integer
+Description: Throws or touches of the ball that led to a putout by another fielder.
+
+Name: Errors
+Types: Property
+Data type: Integer
+Description: Misplays that allowed a batter or runner to advance.
+
+Name: Double Plays
+Types: Property
+Data type: Integer
+Description: Double plays participated in.
+
+
+── Pitch Properties (Statcast, MLB API only) ──────────────────────────────────
+
+Name: Play
+Types: Property
+Data type: Relation
+To entity types: Play
+Description: The plate appearance this pitch belongs to.
+
+Name: Pitch Number
+Types: Property
+Data type: Integer
+Description: The sequential pitch number within the plate appearance.
+
+Name: Pitch Call
+Types: Property
+Data type: Relation
+To entity types: Pitch Call
+Description: Pitch result entity ("Ball", "Called Strike", "Swinging Strike", "Foul", "In play, out(s)", etc.)
+
+Name: Start Speed
+Types: Property
+Data type: Float
+Description: Pitch velocity at release (mph)
+
+Name: End Speed
+Types: Property
+Data type: Float
+Description: Pitch velocity at plate (mph)
+
+Name: Spin Rate
+Types: Property
+Data type: Integer
+Description: Spin rate in RPM
+
+Name: Spin Direction
+Types: Property
+Data type: Integer
+Description: Spin direction in degrees (0-360)
+
+Name: Strike Zone
+Types: Property
+Data type: Integer
+Description: Strike zone region from catcher's perspective. In zone (3x3 grid): 1=high-inside, 2=high-middle, 3=high-outside, 4=mid-inside, 5=mid-middle, 6=mid-outside, 7=low-inside, 8=low-middle, 9=low-outside. Out of zone: 11=above-inside, 12=above-outside, 13=below-inside, 14=below-outside.
+
+Name: Plate X
+Types: Property
+Data type: Float
+Description: Horizontal plate position in feet (0 = center)
+
+Name: Plate Z
+Types: Property
+Data type: Float
+Description: Vertical plate position in feet from ground
+
+Name: Launch Speed
+Types: Property
+Data type: Float
+Description: Exit velocity off the bat (mph) — on batted-ball pitches only
+
+Name: Launch Angle
+Types: Property
+Data type: Float
+Description: Launch angle in degrees
+
+Name: Hit Distance
+Types: Property
+Data type: Float
+Description: Projected total distance in feet
+
+Name: Hit Trajectory
+Types: Property
+Data type: Relation
+To entity types: Hit Trajectory
+Description: Batted ball trajectory entity ("Ground Ball", "Line Drive", "Fly Ball", "Popup")
+
+
+── Roster Properties ──────────────────────────────────────────────────────────
+
+Name: Year
+Types: Property
+Data type: Integer
+Description: The calendar year.
+
+
+── Ejection Properties ────────────────────────────────────────────────────────
+
+Name: Ejected Person
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The person who was ejected from the game.
+
+Name: Ejecting Umpire
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The umpire who issued the ejection.
+
+Name: Ejection Inning
+Types: Property
+Data type: Integer
+Description: The inning in which the ejection occurred.
+
+Name: Ejection Reason
+Types: Property
+Data type: Text
+Description: Free-text reason (e.g., "Arguing balls and strikes", "Arguing result of replay review")
+
+Name: Ejected Role
+Types: Property
+Data type: Relation
+To entity types: Role
+Description: Role of ejected person — points to Player, Manager, or Coach entity
+
+
+================================================================================
+TYPE ENTITIES
+================================================================================
+
+Note: all types implicitly include Name, Types, and Description as properties.
+Only additional properties are listed.
+
+
+── Reference / Lookup Entity Types ────────────────────────────────────────────
+
+These are small, finite sets of reusable entities. Each instance is created
+once and referenced by many other entities via relations. This approach
+ensures consistency and enables graph traversal (e.g., "find all players
+born in Japan" or "find all games in the American League").
+
+Name: City
+Types: Type
+Description: A city or municipality referenced by players, teams, or ballparks.
+Properties: State, Country, Location
+Instances: ~500 (all birth cities, team cities, ballpark cities)
+Examples: "Cincinnati" (State→Ohio, Country→USA), "Oshu" (State→Iwate, Country→Japan)
+
+Name: State
+Types: Type
+Description: A state, province, or administrative region within a country.
+Properties: Country
+Instances: ~150 (US states, Canadian provinces, Japanese prefectures, DR districts, etc.)
+Examples: "California" (Country→USA), "Iwate" (Country→Japan), "Ontario" (Country→Canada)
+
+Name: Country
+Types: Type
+Description: A sovereign nation.
+Properties: (none beyond Name/Description)
+Instances: ~60
+Examples: "USA", "Japan", "Dominican Republic", "Venezuela", "Cuba"
+
+Name: League
+Types: Type
+Description: A professional baseball league or association.
+Properties: (none beyond Name/Description)
+Instances: ~20
+Examples: "American League" (RS code: AL), "National League" (NL),
+          "Eastern Colored League" (ECL), "Negro National League" (NNL),
+          "Federal League" (FL), "Players League" (PL)
+
+Name: Position
+Types: Type
+Description: A defensive fielding position on the baseball diamond.
+Properties: (none beyond Name/Description)
+Instances: 11
+Examples: "Pitcher" (1/P), "Catcher" (2/C), "First Base" (3/1B),
+          "Second Base" (4/2B), "Third Base" (5/3B), "Shortstop" (6/SS),
+          "Left Field" (7/LF), "Center Field" (8/CF), "Right Field" (9/RF),
+          "Designated Hitter" (10/DH), "Outfield" (OF — general)
+
+Name: Game Type
+Types: Type
+Description: A classification of game context within a season.
+Properties: (none beyond Name/Description)
+Instances: 8
+Examples: "Regular Season", "World Series", "ALCS", "NLCS",
+          "ALDS", "NLDS", "Wild Card", "All-Star Game"
+
+Name: Role
+Types: Type
+Properties: (none beyond Name/Description)
+Instances: 4
+Examples: "Player", "Manager", "Coach", "Umpire"
+
+Name: Handedness
+Types: Type
+Description: A batting or throwing hand preference.
+Properties: (none beyond Name/Description)
+Instances: 3
+Examples: "Left", "Right", "Switch"
+
+Name: Pitch Type
+Types: Type
+Description: A classification of pitch based on grip, velocity, and movement.
+Properties: (none beyond Name/Description)
+Instances: ~15
+Examples: "Four-Seam Fastball", "Sinker", "Cutter", "Changeup",
+          "Slider", "Sweeper", "Curveball", "Knuckle Curve",
+          "Splitter", "Knuckleball", "Eephus", "Slurve", "Screwball"
+
+Name: Pitch Call
+Types: Type
+Description: The umpire's ruling or outcome of an individual pitch.
+Properties: (none beyond Name/Description)
+Instances: ~12
+Examples: "Ball", "Called Strike", "Swinging Strike", "Foul", "Foul Tip",
+          "In play, out(s)", "In play, no out", "In play, run(s)",
+          "Hit By Pitch", "Swinging Strike (Blocked)", "Pitchout"
+
+Name: Play Event
+Types: Type
+Description: The outcome category of a plate appearance.
+Properties: (none beyond Name/Description)
+Instances: ~30
+Examples: "Single", "Double", "Triple", "Home Run", "Walk",
+          "Strikeout", "Groundout", "Flyout", "Lineout", "Pop Out",
+          "Hit By Pitch", "Sac Fly", "Sac Bunt", "Field Error",
+          "Forceout", "Grounded Into DP", "Double Play",
+          "Intent Walk", "Fielders Choice", "Caught Stealing 2B"
+
+Name: Hit Trajectory
+Types: Type
+Description: The batted ball flight path classification.
+Properties: (none beyond Name/Description)
+Instances: 4
+Examples: "Ground Ball", "Line Drive", "Fly Ball", "Popup"
+
+Name: Sky Condition
+Types: Type
+Description: The weather and sky state during a game.
+Properties: (none beyond Name/Description)
+Instances: ~7
+Examples: "Sunny", "Cloudy", "Overcast", "Dome", "Night", "Drizzle", "Rain"
+
+Name: Surface Type
+Types: Type
+Description: The playing field surface material.
+Properties: (none beyond Name/Description)
+Instances: 2
+Examples: "Grass", "Artificial Turf"
+
+Name: Roof Type
+Types: Type
+Description: The stadium roof configuration.
+Properties: (none beyond Name/Description)
+Instances: 3
+Examples: "Open", "Retractable", "Dome"
+
+
+── Core Domain Entity Types ───────────────────────────────────────────────────
+
+Name: Person
+Types: Type
+Properties:
+  Retrosheet ID, MLB ID,
+  Birth Date (system), Birth City, Birth State, Birth Country,
+  Death Date, Death City, Death State, Death Country,
+  Bats, Throws,
+  Height (inches), Weight (lbs),
+  Hall of Fame,
+  MLB Debut Date, Last Game Date,
+  Role (multi-valued — a person can have multiple roles)
+
+Source: players.json (Retrosheet), /api/v1/people (MLB API)
+Name format: "First Last" (e.g., "Shohei Ohtani")
+
+
+Name: Team
+Types: Type
+Properties:
+  Retrosheet ID, MLB ID,
+  City, League, Nickname,
+  First Year, Last Year
+
+Source: teams.json (Retrosheet), /api/v1/teams (MLB API)
+Name format: "City Nickname" (e.g., "New York Yankees")
+
+
+Name: Ballpark
+Types: Type
+Description: A baseball stadium or venue where games are played.
+Properties:
+  Retrosheet ID, MLB ID,
+  City, State,
+  Location,
+  Capacity,
+  Surface Type, Roof Type,
+  Left Field Distance, Center Field Distance, Right Field Distance,
+  Start Date, End Date
+
+Source: ballparks.json (Retrosheet), gameData.venue (MLB API live feed)
+Name format: "Venue Name" (e.g., "Fenway Park")
+Description: location + dates active
+
+
+Name: Season
+Types: Type
+Description: A calendar year of baseball activity.
+Properties:
+  Year
+
+Source: derived from game dates
+Name format: "YYYY Season" (e.g., "2024 Season")
+
+
+Name: Game
+Types: Type
+Description: A single baseball game between two teams.
+Properties:
+  Retrosheet Game ID, MLB Game PK,
+  Game Date, Game Number, Day Game, Game Type,
+  Home Team, Away Team, Venue, Season,
+  Home Score, Away Score,
+  Game Length (outs), Attendance, Duration (minutes),
+  Winning Pitcher, Losing Pitcher, Save Pitcher,
+  Home Starting Pitcher, Away Starting Pitcher,
+  Home Manager, Away Manager,
+  Home Plate Umpire,
+  Temperature, Wind, Sky Condition
+
+Source: gamelogs.ndjson + gameinfo.ndjson (Retrosheet),
+        schedule + boxscore + live feed (MLB API)
+Name format: "AWAY @ HOME — YYYY-MM-DD" (e.g., "NYA @ LAN — 2024-10-30")
+Description: final score + key pitchers
+
+
+Name: Play
+Types: Type
+Description: A single plate appearance or at-bat within a game.
+Properties:
+  Game, Batter, Pitcher,
+  Batting Team, Pitching Team,
+  Inning, Top of Inning, At Bat Index,
+  Event,
+  RBI, Is Scoring Play,
+  Outs Before, Outs After,
+  Balls, Strikes,
+  Runner on 1B, Runner on 2B, Runner on 3B
+
+Source: plays.ndjson (Retrosheet), games_*.ndjson (MLB API live feed)
+Name format: "Batter vs Pitcher — Event" (e.g., "Ohtani vs Cole — Home Run")
+Description format: Full play description from feed (e.g., "Ohtani homers (54) on a fly ball to right field.")
+  For Retrosheet plays without natural-language descriptions, construct from event code and game state.
+
+
+Name: Batting Performance
+Types: Type
+Description: One player's batting statistics for a single game.
+Properties:
+  Player, Game, Team, Season,
+  Lineup Position,
+  Plate Appearances, At Bats,
+  Runs, Hits, Doubles, Triples, Home Runs,
+  RBI, Walks, Intentional Walks, Strikeouts,
+  Stolen Bases, Caught Stealing,
+  Hit By Pitch, Sacrifice Hits, Sacrifice Flies,
+  Grounded Into Double Play,
+  Is Designated Hitter
+
+Source: batting.ndjson (Retrosheet), boxscore player batting (MLB API)
+Name format: "Player — YYYY-MM-DD" (e.g., "Ohtani — 2024-10-25")
+Description: stat line summary (e.g., "2-for-5, 1 HR, 3 RBI")
+
+One entity per player per game. Join to Person via Player, to Game via Game.
+
+
+Name: Pitching Performance
+Types: Type
+Description: One pitcher's statistics for a single game.
+Properties:
+  Player, Game, Team, Season,
+  Pitching Sequence,
+  Innings Pitched, Hits Allowed, Runs Allowed, Earned Runs,
+  Home Runs Allowed, Walks Issued, Strikeouts,
+  Batters Faced, Pitches Thrown,
+  Wild Pitches, Balks,
+  Game Started, Complete Game, Shutout,
+  Win, Loss, Save
+
+Source: pitching.ndjson (Retrosheet), boxscore player pitching (MLB API)
+Name format: "Player — YYYY-MM-DD" (e.g., "Eovaldi — 2025-04-01")
+Description: stat line summary (e.g., "9.0 IP, 4 H, 0 ER, 8 K")
+
+One entity per pitcher per game. Join to Person via Player, to Game via Game.
+
+
+Name: Fielding Performance
+Types: Type
+Description: One player's fielding statistics at a single position for a single game.
+Properties:
+  Player, Game, Team, Season,
+  Fielding Position,
+  Innings Fielded (outs),
+  Putouts, Assists, Errors, Double Plays
+
+Source: fielding.ndjson (Retrosheet), boxscore player fielding (MLB API)
+Name format: "Player (POS) — YYYY-MM-DD"
+
+One entity per player per position per game. A player at multiple positions
+gets multiple entities.
+
+
+Name: Pitch
+Types: Type
+Description: A single pitch thrown during a plate appearance, with Statcast measurements.
+Properties:
+  Play, Game, Pitcher, Batter,
+  Pitch Number,
+  Pitch Type, Pitch Call,
+  Start Speed, End Speed,
+  Spin Rate, Spin Direction,
+  Strike Zone, Plate X, Plate Z,
+  Launch Speed, Launch Angle, Hit Distance, Hit Trajectory
+
+Source: MLB API live feed only (/api/v1.1/game/{gamePk}/feed/live → playEvents)
+Name format: "Pitch #N — Type" (e.g., "Pitch #3 — Sinker")
+
+One entity per individual pitch. Only available for Statcast era (2015+).
+Launch Speed / Launch Angle / Hit Distance / Hit Trajectory only populated
+on the final pitch of a batted-ball play.
+
+
+Name: Roster Entry
+Types: Type
+Description: A player's assignment to a team for a specific season.
+Properties:
+  Player, Team, Season,
+  Position, Year
+
+Source: rosters.json (Retrosheet), /api/v1/teams/{id}/roster (MLB API)
+Name format: "Player — Team YYYY" (e.g., "Ohtani — LAN 2024")
+
+One entity per player-team-season. A player traded mid-season has multiple
+entries for that year.
+
+
+Name: Ejection
+Types: Type
+Description: A player, manager, or coach being removed from a game by an umpire.
+Properties:
+  Game,
+  Ejected Person, Ejected Role, Team,
+  Ejecting Umpire,
+  Ejection Inning, Ejection Reason
+
+Source: ejections.json (Retrosheet)
+Name format: "Ejected — Game Date" (e.g., "Hinch ejected — 2024-09-29")
+
+
+================================================================================
+ENTITY RELATIONSHIPS DIAGRAM
+================================================================================
+
+Person ←─[Player]─ Batting Performance ─[Game]─→ Game
+Person ←─[Player]─ Pitching Performance ─[Game]─→ Game
+Person ←─[Player]─ Fielding Performance ─[Game]─→ Game
+Person ←─[Player]─ Roster Entry ─[Team]─→ Team
+Person ←─[Batter]─ Play ─[Pitcher]─→ Person
+Person ←─[Ejected Person]─ Ejection ─[Game]─→ Game
+
+Person ─[Birth City]─→ City ─[State]─→ State ─[Country]─→ Country
+Person ─[Bats / Throws]─→ Handedness
+Person ─[Role]─→ Role (multi-valued)
+
+Game ─[Home Team / Away Team]─→ Team
+Game ─[Venue]─→ Ballpark
+Game ─[Season]─→ Season
+Game ─[Game Type]─→ Game Type
+Game ─[Day Game]─ (boolean)
+Game ─[Sky Conditions]─→ Sky Condition
+Game ─[Winning/Losing/Save Pitcher]─→ Person
+
+Team ─[City]─→ City
+Team ─[League]─→ League
+
+Ballpark ─[City]─→ City
+Ballpark ─[Surface Type]─→ Surface Type
+Ballpark ─[Roof Type]─→ Roof Type
+
+Play ─[Game]─→ Game
+Play ─[Batting Team / Pitching Team]─→ Team
+Play ─[Event]─→ Play Event
+
+Pitch ─[Play]─→ Play
+Pitch ─[Pitcher / Batter]─→ Person
+Pitch ─[Pitch Type]─→ Pitch Type
+Pitch ─[Pitch Call]─→ Pitch Call
+Pitch ─[Hit Trajectory]─→ Hit Trajectory
+
+Roster Entry ─[Position]─→ Position
+Fielding Performance ─[Fielding Position]─→ Position
+
+Ejection ─[Ejected Role]─→ Role
+
+
+================================================================================
+REFERENCE ENTITY INSTANCES
+================================================================================
+
+These are the specific entity instances to create for each reference type.
+Small, finite sets — created once at publish time and referenced everywhere.
+
+Handedness (3):        Left, Right, Switch
+Surface Type (2):      Grass, Artificial Turf
+Roof Type (3):         Open, Retractable, Dome
+Hit Trajectory (4):    Ground Ball, Line Drive, Fly Ball, Popup
+Role (4):              Player, Manager, Coach, Umpire
+
+Position (11):         Pitcher, Catcher, First Base, Second Base, Third Base,
+                       Shortstop, Left Field, Center Field, Right Field,
+                       Designated Hitter, Outfield
+
+Game Type (8):         Regular Season, World Series, ALCS, NLCS, ALDS, NLDS,
+                       Wild Card, All-Star Game
+
+League (~20):          American League (AL), National League (NL),
+                       American Association (AA), Federal League (FL),
+                       Players League (PL), Union Association (UA),
+                       National Association (NA),
+                       Eastern Colored League (ECL), Negro National League (NNL),
+                       Negro American League (NAL), Negro Southern League (NSL), ...
+
+Sky Condition (~7):    Sunny, Cloudy, Overcast, Dome, Night, Drizzle, Rain
+
+Pitch Type (~15):      Four-Seam Fastball, Sinker, Cutter, Changeup, Slider,
+                       Sweeper, Curveball, Knuckle Curve, Splitter,
+                       Knuckleball, Eephus, Slurve, Screwball, ...
+
+Pitch Call (~12):      Ball, Called Strike, Swinging Strike, Foul, Foul Tip,
+                       In play out(s), In play no out, In play run(s),
+                       Hit By Pitch, Swinging Strike (Blocked), Pitchout, ...
+
+Play Event (~30):      Single, Double, Triple, Home Run, Walk, Strikeout,
+                       Groundout, Flyout, Lineout, Pop Out, Hit By Pitch,
+                       Sac Fly, Sac Bunt, Field Error, Forceout,
+                       Grounded Into DP, Double Play, Intent Walk,
+                       Fielders Choice, Caught Stealing 2B, ...
+
+Country (~60):         USA, Japan, Dominican Republic, Venezuela, Cuba,
+                       Puerto Rico, Mexico, Panama, Canada, Colombia, ...
+
+State (~150):          California, New York, Texas, Florida, Ohio, ...
+                       Ontario, Iwate, Distrito Nacional, ...
+
+City (~500):           New York, Los Angeles, Chicago, Cincinnati, Boston, ...
+                       Santo Domingo, Oshu, Havana, Maracaibo, ...
+
+
+================================================================================
+DATA SOURCE COVERAGE & MERGE STRATEGY
+================================================================================
+
+Which data sources populate each type, and how they merge:
+
+Type                  Primary (MLB API)           Backfill (Retrosheet)         Merge strategy
+────                  ─────────────────           ─────────────────────         ──────────────
+Person                /people/{id}                players.json                  MLB for active players (richer bio);
+                                                                                RS for historical + death dates + HoF + roles
+Team                  /teams?sportId=1            teams.json                    MLB for current 30; RS adds 260+ historical
+                                                                                franchises (Negro Leagues, defunct leagues)
+Ballpark              gameData.venue              ballparks.json                MLB has coords/dimensions/capacity;
+                                                                                RS has historical venues MLB doesn't list
+Season                (derived)                   (derived)                     Same — derived from game dates
+Game                  schedule + boxscore         gamelogs + gameinfo           MLB primary for 2015+;
+                      + live feed                                               RS backfills pre-2015, adds umpire crew,
+                                                                                managers, detailed team stat lines
+Play                  live feed (allPlays)        plays.ndjson                  MLB primary for 2015+ (has Statcast);
+                                                                                RS backfills 1950-2014 (has game state,
+                                                                                lineup, baserunners, fielder IDs)
+Batting Performance   boxscore (player)           batting.ndjson                MLB has pitch counts, computed rates;
+                                                                                RS has game context flags (gametype, etc.)
+Pitching Performance  boxscore (player)           pitching.ndjson               MLB has balls/strikes/pitchesThrown;
+                                                                                RS has game context flags
+Fielding Performance  boxscore (player)           fielding.ndjson               Both similar; RS has innings fielded
+Pitch                 live feed (playEvents)      —                             MLB only (Statcast 2015+)
+Roster Entry          /teams/{id}/roster          rosters.json                  MLB has jersey/status; RS has position
+Ejection              —                           ejections.json                RS only
+
+Reference entities:   Created from both sources. Deduplicate by name.
+  City/State/Country  Extracted from player birth/death locations, team cities,
+                      ballpark locations. MLB API venue data adds coordinates.
+  League              RS has historical leagues (Negro, Federal, etc.);
+                      MLB has only AL/NL.
+  Position            Same set in both sources.
+  Pitch Type/Call     MLB API only.
+  Play Event          Both — RS uses codes ("S", "HR"), MLB uses full names.
+                      Normalize to full names.
+
+Historical depth:
+  Retrosheet:  1871–present (schedules), 1901–present (gamelogs), 1950+ (plays)
+  MLB API:     1901–present (schedules), 1901–present (boxscores), 1950+ (plays)
+  Statcast:    2015–present only (pitch velocity, spin, exit velo, launch angle)
+
+Exclusive to MLB API (cannot get from Retrosheet):
+  - Pitch entity (Statcast data)
+  - Venue coordinates, dimensions, capacity
+  - Weather as natural-language strings
+  - Pitcher decision via stats (not just IDs)
+  - Real-time in-progress game state
+  - Mound visit and replay challenge counts
+
+Exclusive to Retrosheet (cannot get from MLB API):
+  - Negro League games and teams
+  - Ejection records
+  - Special collections (no-hitters, triple plays, cycles, 3HR games, 15K games, 20+ inning games)
+  - Pre-1901 games (National Association era)
+  - Full umpire crew (all 4-6 positions)
+  - Curated acquisition and completion info
+
+
+================================================================================
+PROPERTY REUSE ACROSS TYPES
+================================================================================
+
+Properties shared by multiple types (define once, reference from each schema):
+
+  Property            Used by
+  ────────            ───────
+  Retrosheet ID       Person, Team, Ballpark
+  MLB ID              Person, Team, Ballpark
+  City                Team, Ballpark, City (self — via State/Country chain)
+  State               Ballpark, City, State (self — via Country)
+  Country             City, State
+  League              Team
+  Season              Game, Batting Perf, Pitching Perf, Fielding Perf, Roster Entry
+  Team                Batting Perf, Pitching Perf, Fielding Perf, Roster Entry, Ejection
+  Game                Play, Batting Perf, Pitching Perf, Fielding Perf, Pitch, Ejection
+  Player              Batting Perf, Pitching Perf, Fielding Perf, Roster Entry
+  Batter              Play, Pitch
+  Pitcher             Play, Pitch
+  Position            Roster Entry, Fielding Performance
+  Game Type           Game
+  Role                Person (multi), Ejection
+  RBI                 Play, Batting Perf
+  Strikeouts          Batting Perf, Pitching Perf
+  Pitch Type          Pitch
+  Pitch Call          Pitch
+
+
+================================================================================
+TEXT vs RELATION DECISION LOG
+================================================================================
+
+Properties kept as Text (free-form, not suitable for entity-ification):
+  - Retrosheet ID / Retrosheet Game ID — unique per-entity identifiers, not reusable
+  - Nickname — team-specific text (e.g., "Yankees"), not a shared concept
+  - Play description — stored in system Description property, free-form natural language
+  - Wind — free-form string (e.g., "6 mph, In From CF"), infinite variations
+  - Ejection Reason — free-form string, unique per incident
+
+Properties converted to Relations (finite reusable sets):
+  - City, State, Country — geographic entities shared across Person, Team, Ballpark
+  - League — finite set of ~20, shared across Team and historical contexts
+  - Position — 11 positions, shared across Roster Entry and Fielding Performance
+  - Game Type — 8 types, shared across all games
+  - Role — 4 roles, shared across Person and Ejection
+  - Handedness — 3 values (L/R/S), shared across Bats and Throws on Person
+  - Pitch Type — ~15 types, shared across all Pitch entities
+  - Pitch Call — ~12 outcomes, shared across all Pitch entities
+  - Play Event — ~30 outcomes, shared across all Play entities
+  - Hit Trajectory — 4 categories, shared across Pitch entities
+  - Sky Condition — ~7 values, shared across Game entities
+  - Day/Night — modeled as boolean (Day Game: true/false) since it's binary
+  - Surface Type — 2 values, shared across Ballpark entities
+  - Roof Type — 3 values, shared across Ballpark entities
