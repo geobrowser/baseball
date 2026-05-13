@@ -1,9 +1,5 @@
 # Baseball × Geo — Walkthrough Plan
 
-A step-by-step plan for the video walkthrough series building a decentralized baseball knowledge graph on the Geo protocol.
-
----
-
 ## Phase 0 — Project Introduction & Data
 
 **Goal:** Set context, explain the data source, and orient viewers to the repo.

@@ -1,0 +1,1111 @@
+================================================================================
+RETROSHEET x GEO — ONTOLOGY DESIGN DOCUMENT
+================================================================================
+
+Models 14 parsed Retrosheet datasets (~16.3M records, 9.6 GB) as a Geo
+knowledge graph using GRC-20 conventions. Three kinds of types:
+
+  • Top-level entity types        — browseable, page-style nodes
+  • Relation entity types          — entities that act as a link, with
+                                     their own schema of properties
+  • Reference / lookup types       — small finite sets pointed to by
+                                     relation properties (positions,
+                                     handedness, weather codes, etc.)
+
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+  1. Naming conventions
+  2. Top-level entity types
+       Person · Team · Ballpark · City · State or region · Country ·
+       League · Game · Season · Roster entry · Staff stint ·
+       Batting line · Pitching line · Fielding line · Play · Ejection ·
+       Scheduled game · Notable game collection
+  3. Relation entity types
+       Team game record · Umpire assignment ·
+       Roster position assignment · Team ballpark tenancy
+  4. Reference / lookup types
+       (19 ref types: Position, Handedness, Person role, Game type, …)
+  5. Relation summary (which relation property connects what to what)
+  6. Entity relationship diagram (ASCII)
+
+
+================================================================================
+1. NAMING CONVENTIONS
+================================================================================
+
+Applied to all type names, property names, and reference instance names.
+
+  1. Only the first letter of the first word is capitalized, unless the
+     word is an acronym (RBI, ERA, MLB, ID, OPS, WHIP, DH, PBP, ISO,
+     DNP, etc.).
+       ✓  "Hit by pitch", "Home runs", "Runs batted in", "Hall of fame"
+       ✗  "Hit By Pitch", "Hall Of Fame"
+
+  2. Minor words (prepositions, articles) stay lowercase mid-name.
+       ✓  "Runner on 1B", "Top of inning", "Reached on error",
+           "Grounded into double play", "Pitcher responsible for runner
+           on first"
+
+  3. Parenthetical units are lowercase.
+       ✓  "Height (inches)", "Weight (lbs)", "Duration (minutes)",
+           "Innings pitched (outs)", "Temperature (F)", "Wind speed (mph)"
+
+  4. Boolean properties:
+       • Official-stat style (no "Is" prefix):
+           Day game, Game started, Complete game, Save, Loss,
+           No outs recorded, Started at position, Used DH, Hall of fame
+       • State-description style ("Is" prefix):
+           Is plate appearance, Is at bat, Is designated hitter
+
+
+================================================================================
+2. TOP-LEVEL ENTITY TYPES
+================================================================================
+
+Properties are listed as: Property name | Data type | Description | Source.
+"System" in the Source column means a GRC-20 system property (Name,
+Description, Cover, Avatar) that every entity may carry.
+
+
+-- Person --
+
+Description:
+  A person in baseball history — player, manager, coach, umpire, or
+  official scorer. One Person per individual; multiple roles across a
+  career are inferable from Roster entry and Staff stint membership.
+
+Source: players.json
+Name format:  full common name (e.g., "Shohei Ohtani")
+Description format:  e.g., "Two-way player. Bats L / Throws R. Active
+  2018–present."
+
+Properties:
+  Name                       | Text          | Common full name           | players.full_name (fallback to first_name + last_name)
+  Description                | Text          | Short blurb                | system
+  Cover                      | Image         | Banner image               | system
+  Avatar                     | Image         | Headshot                   | system
+  Also known as              | Text (multi)  | Birth name / AKA           | players.birth_name, players.alt_name (when ≠ Name)
+  Birth date                 | Date          | ISO date                   | players.birth_date
+  Birth place                | Relation →    | City, else State or region | players.birth_city / birth_state / birth_country
+                             | City | State  | else Country               | (link to most-specific known)
+                             | or region |   |                            |
+                             | Country       |                            |
+  Death date                 | Date          | Null if alive              | players.death_date
+  Death place                | Relation →    | Same multi-target rule     | players.death_city / death_state / death_country
+                             | City | State  | as Birth place             |
+                             | or region |   |                            |
+                             | Country       |                            |
+  Bats                       | Relation →    | Batting hand               | players.bats (L/R/B/?)
+                             | Handedness    |                            |
+  Throws                     | Relation →    | Throwing hand              | players.throws
+                             | Handedness    |                            |
+  Height (inches)            | Integer       | Whole inches               | players.height_inches
+  Weight (lbs)               | Integer       | Whole pounds               | players.weight_lbs
+  Hall of fame               | Boolean       | Inducted into MLB HOF      | players.hall_of_fame
+  Retrosheet person ID       | Text          | e.g., "ohtas001"           | players.retrosheet_id
+
+
+-- Team --
+
+Description:
+  A baseball franchise across its history. One entity per franchise (not
+  per season); season membership is captured by Roster entry / Staff
+  stint and Game participation.
+
+Source: teams.json
+Name format:  full team name "{city} {nickname}" (e.g., "New York Yankees")
+
+Properties:
+  Name                       | Text          | Full team name             | teams.full_name
+  Description                | Text          | League + active years      | system
+  Cover                      | Image         | Banner                     | system
+  Avatar                     | Image         | Logo                       | system
+  Also known as              | Text (multi)  | Historical alternate names | derived
+  City                       | Relation →    | Home city                  | teams.city (deduped → City entity)
+                             | City          |                            |
+  Leagues                    | Relation →    | All leagues this franchise | teams.league (split on ";"
+                             | League (multi)| has played in              | for compound values like "NL;AL")
+  First active year          | Integer       | First active season        | teams.first_year
+  Last active year           | Integer       | Last active season         | teams.last_year (null if active)
+  Home ballparks             | Relation →    | All venues used as home,   | derived from gamelogs (group by
+                             | Ballpark      | with tenancy windows on    | home_team + park_id, min/max date);
+                             | (multi,       | the relation entity        | relation entity = Team ballpark
+                             | ordered)      |                            | tenancy
+  Retrosheet team ID         | Text          | e.g., "NYA"                | teams.retrosheet_id
+  Alternate Retrosheet IDs   | Text (multi)  | Other codes used by team   | teams.alt_ids
+
+Notes:
+  • 77 of 293 teams have an empty league field (mostly defunct early
+    leagues) — skip the Leagues relation rather than using a placeholder.
+  • Houston Astros (NL → AL in 2013) and many Negro League teams have
+    multiple leagues — Leagues is intentionally multi-valued.
+
+
+-- Ballpark --
+
+Description:
+  A venue where MLB or affiliated games have been played.
+
+Source: ballparks.json
+Name format:  official venue name (e.g., "Fenway Park")
+
+Properties:
+  Name                       | Text          | Official name              | ballparks.name
+  Description                | Text          | City + active span         | system
+  Cover                      | Image         |                            | system
+  Avatar                     | Image         |                            | system
+  Also known as              | Text (multi)  | Alternate names            | ballparks.aka
+  City                       | Relation →    | Host city                  | ballparks.city
+                             | City          |                            |
+  State or region            | Relation →    |                            | ballparks.state
+                             | State or region                            |
+  Country                    | Relation →    | (USA unless otherwise)     | derived
+                             | Country       |                            |
+  Opening date               | Date          | First game date            | ballparks.start_date (normalize to ISO)
+  Closing date               | Date          | Last game date; null if    | ballparks.end_date
+                             |               | still active               |
+  Primary league             | Relation →    |                            | ballparks.league
+                             | League        |                            |
+  Notes                      | Text          | Free-text usage notes      | ballparks.notes
+  Retrosheet park ID         | Text          | e.g., "BOS07"              | ballparks.retrosheet_id
+  Location                   | Point         | WGS84 lat/lon (renderable: | derived (geocoding deferred —
+                             |               | Geo location)              | not in Phase 1)
+
+
+-- City --
+
+Description:
+  A city, town, or municipality. Used for birthplaces, team home cities,
+  and ballpark locations. Each unique city is a single entity reused
+  across all references.
+
+Source: deduped from players.birth_city / death_city, teams.city,
+        ballparks.city
+Name format:  city name (e.g., "Boston", "Santo Domingo")
+
+Properties:
+  Name                       | Text          |                            | (deduped)
+  Description                | Text          | Optional blurb             | system
+  Cover                      | Image         |                            | system
+  Avatar                     | Image         |                            | system
+  State or region            | Relation →    | Containing region          | derived (from ballparks/players)
+                             | State or region                            |
+  Country                    | Relation →    | Containing country         | derived
+                             | Country       |                            |
+  Location                   | Point         | Geocoded lat/lon           | (deferred — not in Phase 1)
+
+
+-- State or region --
+
+Description:
+  A state, province, prefecture, or other sub-national region.
+
+Source: deduped from players.birth_state / death_state, ballparks.state
+Name format:  full region name (e.g., "California", "Iwate", "Distrito Nacional")
+
+Properties:
+  Name                       | Text          |                            | (deduped)
+  Description                | Text          |                            | system
+  Cover                      | Image         |                            | system
+  Abbreviation               | Text          | e.g., "CA", "NY"           | (looked up)
+  Country                    | Relation →    |                            | derived
+                             | Country       |                            |
+
+
+-- Country --
+
+Description:
+  A sovereign nation. Used for birth/death country and (via City or
+  directly) team / ballpark countries.
+
+Source: deduped from players.birth_country
+Name format:  country name (e.g., "USA", "Japan", "Dominican Republic")
+
+Properties:
+  Name                       | Text          |                            | (deduped)
+  Description                | Text          |                            | system
+  Cover                      | Image         |                            | system
+  Avatar                     | Image         | Flag                       | system
+  ISO country code (alpha-2) | Text          | e.g., "US", "JP", "DO"     | (looked up)
+  ISO country code (alpha-3) | Text          | e.g., "USA", "JPN", "DOM"  | (looked up)
+
+
+-- League --
+
+Description:
+  A baseball league. First-class browseable entity (one page per league).
+
+Source: deduped from teams.league, ballparks.league, gamelogs.*_league
+Name format:  full league name (e.g., "American League")
+
+Properties:
+  Name                       | Text          | Full league name           | (deduped)
+  Description                | Text          | Short summary              | system
+  Cover                      | Image         |                            | system
+  Avatar                     | Image         | Logo                       | system
+  Abbreviation               | Text          | e.g., "AL", "NL", "NAL"    | teams.league code
+  First active year          | Integer       |                            | derived
+  Last active year           | Integer       | Null if still active       | derived
+
+Sample instances:
+  American League (AL), National League (NL), American Association (AA),
+  Federal League (FL), Players' League (PL), Union Association (UA),
+  National Association (NA), Eastern Colored League (ECL), Negro
+  National League (NNL), Negro American League (NAL), Negro Southern
+  League (NSL), …
+
+
+-- Game --
+
+Description:
+  A single baseball game between two teams that was actually played.
+  (Scheduled but unplayed games are modeled separately as Scheduled
+  game.)
+
+Source: gamelogs.ndjson + gameinfo.ndjson
+Name format:  "AWAY @ HOME — YYYY-MM-DD" (e.g., "NYA @ LAN — 2024-10-30")
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | Final score + key pitchers | system
+  Cover                      | Image         |                            | system
+  Date                       | Date          | Game date                  | gamelogs.date
+  Game number                | Integer       | 0=single game, 1/2=DH      | gamelogs.game_number
+  Day of week                | Relation →    |                            | gamelogs.day_of_week
+                             | Day of week   |                            |
+  Teams                      | Relation →    | Two relations per game     | gamelogs visiting/home_team;
+                             | Team (multi); | (Home + Away). All per-    | relation entity = Team game record
+                             | rel entity =  | team data lives on the     |
+                             | Team game     | relation entity.           |
+                             | record        |                            |
+  Venue                      | Relation →    |                            | gamelogs.park_id / gameinfo.site
+                             | Ballpark      |                            |
+  Attendance                 | Integer       |                            | gamelogs.attendance
+  Duration (minutes)         | Integer       |                            | gamelogs.duration_minutes
+  Day game                   | Boolean       | true = day, false = night  | gamelogs.day_night ("D"→true, "N"→false)
+  Game length (outs)         | Integer       | 54 = regulation 9 innings  | gamelogs.game_length_outs
+  Innings played             | Integer       |                            | gameinfo.innings
+  Used DH                    | Boolean       |                            | gameinfo.usedh
+  Game type                  | Relation →    |                            | gametype field on stat lines
+                             | Game type     |                            |
+  Season                     | Relation →    |                            | derived from Date.year
+                             | Season        |                            |
+  Start time                 | Time          |                            | gameinfo.starttime
+  Field condition            | Relation →    |                            | gameinfo.fieldcond
+                             | Field condition                            |
+  Precipitation              | Relation →    |                            | gameinfo.precip
+                             | Precipitation |                            |
+  Sky condition              | Relation →    |                            | gameinfo.sky
+                             | Sky condition |                            |
+  Temperature (F)            | Integer       |                            | gameinfo.temp
+  Wind direction             | Relation →    |                            | gameinfo.winddir
+                             | Wind direction|                            |
+  Wind speed (mph)           | Integer       |                            | gameinfo.windspeed
+  Umpires                    | Relation →    | Ordered home plate, 1B,    | gameinfo.umphome / ump1b / ump2b /
+                             | Person (multi,| 2B, 3B, then LF/RF for     | ump3b / umplf / umprf;
+                             | ordered);     | postseason crews. Position | relation entity = Umpire assignment
+                             | rel entity =  | for each is on the relation|
+                             | Umpire        | entity.                    |
+                             | assignment    |                            |
+  Official scorer            | Relation →    |                            | gameinfo.oscorer
+                             | Person        |                            |
+  Winning pitcher            | Relation →    |                            | gamelogs.winning_pitcher_id / gameinfo.wp
+                             | Person        |                            |
+  Losing pitcher             | Relation →    |                            | gamelogs.losing_pitcher_id / gameinfo.lp
+                             | Person        |                            |
+  Save pitcher               | Relation →    | Null if no save            | gamelogs.save_pitcher_id / gameinfo.save
+                             | Person        |                            |
+  Completion info            | Text          | If completed on later date | gamelogs.completion_info
+  Forfeit info               | Text          | If forfeited               | gamelogs.forfeit_info
+  Retrosheet ID              | Text          | e.g., "NYA202410300"       | gameinfo.gid (or derived from gamelogs)
+
+
+-- Season --
+
+Description:
+  A single league-season (one entity per league per year).
+
+Source: derived from gamelogs / schedules
+Name format:  "{Year} {League}" (e.g., "2024 MLB", "1925 NNL")
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | High-level season summary  | system
+  Cover                      | Image         |                            | system
+  Year                       | Integer       |                            | derived
+  League                     | Relation →    |                            | derived
+                             | League        |                            |
+  Start date                 | Date          | First game of season       | derived
+  End date                   | Date          | Last game of season        | derived
+
+
+-- Roster entry --
+
+Description:
+  A player's affiliation with a team for a single season, plus all
+  season-aggregate stats. One entity per player–team–season; a mid-
+  season trade produces multiple entries.
+
+Source: rosters.json + allplayers.ndjson (joined on player + team + season)
+Name format:  "{Person Name} — {Team} {Year}"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | "DH, 135 G, 2024" style    | system
+  Person                     | Relation →    |                            | rosters.player_id
+                             | Person        |                            |
+  Team                       | Relation →    |                            | rosters.team_id
+                             | Team          |                            |
+  Season                     | Relation →    |                            | rosters.year
+                             | Season        |                            |
+  Games played               | Integer       | Total for the season       | allplayers.g
+  Positions played           | Relation →    | Primary position first,    | rosters.position + allplayers
+                             | Position      | then descending by games.  | per-position counts;
+                             | (multi,       | "Games played" on the      | relation entity = Roster position
+                             | ordered);     | relation entity holds the  | assignment
+                             | rel entity =  | per-position count.        |
+                             | Roster pos.   |                            |
+                             | assignment    |                            |
+  First game of season       | Date          | This player's first game   | allplayers.first_g
+   (date)                    |               | with this team this year   |
+  Last game of season        | Date          | This player's last game    | allplayers.last_g
+   (date)                    |               | with this team this year   |
+  Season batting average     | Float64       | H / AB                     | derived from Batting lines
+  Season on-base percentage  | Float64       | (H+BB+HBP)/(AB+BB+HBP+SF)  | derived
+  Season slugging            | Float64       | TB / AB                    | derived
+  Season OPS                 | Float64       | OBP + SLG                  | derived
+  Season ERA                 | Float64       | ER × 9 / IP                | derived from Pitching lines
+  Season WHIP                | Float64       | (BB + H allowed) / IP      | derived
+  Season fielding percentage | Float64       | (PO + A) / (PO + A + E)    | derived from Fielding lines
+
+Note: Bats / Throws are NOT on Roster entry — they're a Person attribute.
+Year is NOT on Roster entry — Season carries it.
+
+
+-- Staff stint --
+
+Description:
+  A manager / coach / umpire / official scorer affiliation for a single
+  season. Mirrors Roster entry for non-player roles. One per
+  person-team-season for managers and coaches; umpire and official
+  scorer stints are league-wide so Team is null.
+
+Source: derived from gamelogs (h_manager_id, v_manager_id, hp_umpire_id),
+        gameinfo (umphome, ump1b/2b/3b, umplf/rf, oscorer), and players
+        debut/last_* dates
+Name format:  "{Person Name} — {Team or '—'} {Year} ({Role})"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | "112 games, 2024 (Manager)"| system
+  Person                     | Relation →    |                            | derived
+                             | Person        |                            |
+  Role                       | Relation →    | Manager / Coach / Umpire / | derived
+                             | Person role   | Official scorer            |
+  Team                       | Relation →    | Null for umpires / scorers | derived
+                             | Team          |                            |
+  Season                     | Relation →    |                            | derived
+                             | Season        |                            |
+  Games                      | Integer       | Total for the season       | derived (count games)
+  First game of season       | Date          |                            | derived
+   (date)                    |               |                            |
+  Last game of season        | Date          |                            | derived
+   (date)                    |               |                            |
+
+
+-- Batting line --
+
+Description:
+  One player's batting performance in one game.
+
+Source: batting.ndjson
+Name format:  "{Batter} — {Game name}"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | "2-for-5, HR, 3 RBI"       | system
+  Game                       | Relation →    |                            | batting.gid
+                             | Game          |                            |
+  Batter                     | Relation →    |                            | batting.id
+                             | Person        |                            |
+  Team                       | Relation →    | Batter's team              | batting.team
+                             | Team          |                            |
+  Opponent team              | Relation →    | One-hop convenience        | batting.opp
+                             | Team          |                            |
+  Lineup position            | Integer       | 1–9                        | batting.b_lp
+  Lineup sequence            | Integer       | 1 = starter; 2+ = subs     | batting.b_seq
+  Stat type                  | Relation →    | Value / Official / Lower / | batting.stattype
+                             | Stat type     | Upper bound                |
+  Plate appearances          | Integer       |                            | batting.b_pa
+  At bats                    | Integer       |                            | batting.b_ab
+  Runs                       | Integer       |                            | batting.b_r
+  Hits                       | Integer       |                            | batting.b_h
+  Doubles                    | Integer       |                            | batting.b_d
+  Triples                    | Integer       |                            | batting.b_t
+  Home runs                  | Integer       |                            | batting.b_hr
+  Runs batted in             | Integer       |                            | batting.b_rbi
+  Sacrifice hits             | Integer       |                            | batting.b_sh
+  Sacrifice flies            | Integer       |                            | batting.b_sf
+  Hit by pitch               | Integer       |                            | batting.b_hbp
+  Walks                      | Integer       |                            | batting.b_w
+  Intentional walks          | Integer       |                            | batting.b_iw
+  Strikeouts                 | Integer       |                            | batting.b_k
+  Stolen bases               | Integer       |                            | batting.b_sb
+  Caught stealing            | Integer       |                            | batting.b_cs
+  Grounded into double play  | Integer       |                            | batting.b_gdp
+  Reached on interference    | Integer       |                            | batting.b_xi
+  Reached on error           | Integer       |                            | batting.b_roe
+  Is designated hitter       | Boolean       | Batted as DH               | batting.dh
+
+(Date / Venue / Game type / Result are NOT stored — reachable via Game.)
+
+
+-- Pitching line --
+
+Description:
+  One pitcher's performance in one game.
+
+Source: pitching.ndjson
+Name format:  "{Pitcher} — {Game name}"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | "6 IP, 5 H, 2 ER, 7 K"     | system
+  Game                       | Relation →    |                            | pitching.gid
+                             | Game          |                            |
+  Pitcher                    | Relation →    |                            | pitching.id
+                             | Person        |                            |
+  Team                       | Relation →    |                            | pitching.team
+                             | Team          |                            |
+  Opponent team              | Relation →    | One-hop convenience        | pitching.opp
+                             | Team          |                            |
+  Pitching sequence          | Integer       | 1 = starter; 2+ = relief   | pitching.p_seq
+  Stat type                  | Relation →    |                            | pitching.stattype
+                             | Stat type     |                            |
+  Innings pitched (outs)     | Integer       | Raw — 27 = 9 IP, 1 = ⅓ IP  | pitching.p_ipouts
+  Innings pitched            | Float64       | Base-3 display — 6.2 means | derived (outs/3 with remainder
+                             |               | 6⅔ IP, NOT 6.2             |  shown as .0/.1/.2)
+  Batters faced              | Integer       |                            | pitching.p_bfp
+  Hits allowed               | Integer       |                            | pitching.p_h
+  Doubles allowed            | Integer       |                            | pitching.p_d
+  Triples allowed            | Integer       |                            | pitching.p_t
+  Home runs allowed          | Integer       |                            | pitching.p_hr
+  Runs allowed               | Integer       |                            | pitching.p_r
+  Earned runs                | Integer       |                            | pitching.p_er
+  Walks issued               | Integer       |                            | pitching.p_w
+  Intentional walks issued   | Integer       |                            | pitching.p_iw
+  Strikeouts                 | Integer       |                            | pitching.p_k
+  Hit batters                | Integer       |                            | pitching.p_hbp
+  Wild pitches               | Integer       |                            | pitching.p_wp
+  Balks                      | Integer       |                            | pitching.p_bk
+  Stolen bases allowed       | Integer       |                            | pitching.p_sb
+  Caught stealing            | Integer       |                            | pitching.p_cs
+  Sacrifice hits allowed     | Integer       |                            | pitching.p_sh
+  Sacrifice flies allowed    | Integer       |                            | pitching.p_sf
+  Passed balls               | Integer       |                            | pitching.p_pb
+  Game finished              | Boolean       |                            | pitching.p_gf
+  Game started               | Boolean       |                            | pitching.p_gs
+  Complete game              | Boolean       |                            | pitching.p_cg
+  Loss                       | Boolean       | This pitcher took the loss | pitching.lp
+  No outs recorded           | Boolean       |                            | pitching.p_noout
+
+
+-- Fielding line --
+
+Description:
+  One player's defensive appearance at one position in one game. A
+  player who plays multiple positions in a game gets multiple records.
+
+Source: fielding.ndjson
+Name format:  "{Fielder} ({Position}) — {Game name}"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | "9 IP at CF, 4 PO, 0 E"    | system
+  Game                       | Relation →    |                            | fielding.gid
+                             | Game          |                            |
+  Fielder                    | Relation →    |                            | fielding.id
+                             | Person        |                            |
+  Team                       | Relation →    |                            | fielding.team
+                             | Team          |                            |
+  Opponent team              | Relation →    |                            | fielding.opp
+                             | Team          |                            |
+  Position                   | Relation →    |                            | fielding.d_pos
+                             | Position      |                            |
+  Defensive sequence         | Integer       | 1 = started, 2+ = entered  | fielding.d_seq
+  Stat type                  | Relation →    |                            | fielding.stattype
+                             | Stat type     |                            |
+  Innings fielded (outs)     | Integer       |                            | fielding.d_ifouts
+  Putouts                    | Integer       |                            | fielding.d_po
+  Assists                    | Integer       |                            | fielding.d_a
+  Errors                     | Integer       |                            | fielding.d_e
+  Double plays               | Integer       |                            | fielding.d_dp
+  Triple plays               | Integer       |                            | fielding.d_tp
+  Started at position        | Boolean       |                            | fielding.d_gs
+
+
+-- Play --
+
+Description:
+  A single plate appearance / play-by-play event with full game state at
+  the moment of the event.
+
+Source: plays.ndjson
+Name format:  "{Game} — {Inning}{T/B} #{PA}" (e.g., "NYA @ LAN — 8T #42")
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | Short event summary        | system
+  Game                       | Relation →    |                            | plays.gid
+                             | Game          |                            |
+  Inning                     | Integer       |                            | plays.inning
+  Half inning                | Relation →    | Top / Bottom               | plays.top_bot
+                             | Half inning   |                            |
+  Plate appearance number    | Integer       | Sequential PA in game      | plays.pn
+  Batting team               | Relation →    |                            | plays.batteam
+                             | Team          |                            |
+  Pitching team              | Relation →    |                            | plays.pitteam
+                             | Team          |                            |
+  Score (visiting)           | Integer       | Mid-game score AT this play| plays.score_v
+  Score (home)               | Integer       | (NOT final game score)     | plays.score_h
+  Batter                     | Relation →    |                            | plays.batter
+                             | Person        |                            |
+  Pitcher                    | Relation →    |                            | plays.pitcher
+                             | Person        |                            |
+  Lineup position            | Integer       |                            | plays.lp
+  Batter handedness          | Relation →    | Actual handedness used     | plays.bathand
+                             | Handedness    | (matters for switch hitters)|
+  Pitcher handedness         | Relation →    |                            | plays.pithand
+                             | Handedness    |                            |
+  Event code                 | Text          | Raw Retrosheet code, e.g.  | plays.event
+                             |               | "S7/L", "63", "8/F"        |
+  Event types                | Relation →    | Atomic outcomes (e.g.,     | derived from event code
+                             | Play event    | [Single], [Strikeout, Wild |
+                             | type (multi)  | pitch], [Groundout, DP])   |
+  Fielders involved          | Relation →    | Field-area fielders, in    | derived from event code
+                             | Position      | sequence (e.g., "63" →     |
+                             | (multi,       | [Shortstop, First base])   |
+                             | ordered)      |                            |
+  Hit trajectory             | Relation →    | Fly / ground / line / pop /| derived from event-code modifier
+                             | Hit trajectory| bunt variant               |
+  Is plate appearance        | Boolean       |                            | plays.pa
+  Is at bat                  | Boolean       |                            | plays.ab
+  Ball in play               | Boolean       |                            | plays.bip
+  Balls                      | Integer       |                            | plays.balls
+  Strikes                    | Integer       |                            | plays.strikes
+  Outs before                | Integer       |                            | plays.outs_pre
+  Outs after                 | Integer       |                            | plays.outs_post
+  Runner on first after      | Relation →    |                            | plays.br1_post
+                             | Person        |                            |
+  Runner on second after     | Relation →    |                            | plays.br2_post
+                             | Person        |                            |
+  Runner on third after      | Relation →    |                            | plays.br3_post
+                             | Person        |                            |
+  Pitcher responsible for    | Relation →    | "Pitcher of record" for    | plays.pr1_post
+   runner on first           | Person        | this runner                |
+  PBP source                 | Relation →    | Recorded vs Deduced        | plays.pbp
+                             | PBP source    |                            |
+
+
+-- Ejection --
+
+Description:
+  An ejection of a player, manager, coach, trainer, or other party by an
+  umpire.
+
+Source: ejections.json
+Name format:  "{Ejected name} ejected — {Date}"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | Short reason               | system
+  Game                       | Relation →    |                            | ejections.game_id
+                             | Game          |                            |
+  Date                       | Date          |                            | ejections.date
+  Inning                     | Integer       | -1 if pre-game / unknown   | ejections.inning
+  Ejected person             | Relation →    |                            | ejections.ejected_id
+                             | Person        |                            |
+  Ejected role               | Relation →    | Player / Manager / Coach / | ejections.role
+                             | Ejection role | Trainer / Non-uniformed    |
+  Team                       | Relation →    |                            | ejections.team
+                             | Team          |                            |
+  Ejecting umpire            | Relation →    |                            | ejections.umpire_id
+                             | Person        |                            |
+  Reason                     | Text          | Free-text reason           | ejections.reason
+
+
+-- Scheduled game --
+
+Description:
+  A scheduled (not necessarily played) game, including future seasons
+  (through 2026) and postponement / makeup metadata. Distinct from Game,
+  which is restricted to actually-played games.
+
+Source: schedules.ndjson
+Name format:  "{Away} @ {Home} — {Date} (scheduled)"
+
+Properties:
+  Name                       | Text          |                            | derived
+  Description                | Text          | Scheduled / postponed /    | system
+                             |               | made-up status             |
+  Date                       | Date          |                            | schedules.date
+  Game number                | Integer       |                            | schedules.game_number
+  Day of week                | Relation →    |                            | schedules.day_of_week
+                             | Day of week   |                            |
+  Home team                  | Relation →    | Wide-row form here is OK — | schedules.home_team
+                             | Team          | scheduled games have no    |
+  Away team                  | Relation →    | per-team box totals to     | schedules.visiting_team
+                             | Team          | justify a relation entity  |
+  Season                     | Relation →    |                            | derived from Date.year
+                             | Season        |                            |
+  Home team game number      | Integer       | Team's sequential game #   | schedules.home_game_number
+   (in season)               |               | for the season             |
+  Away team game number      | Integer       |                            | schedules.visiting_game_number
+   (in season)               |               |                            |
+  Day game                   | Boolean       | true=day, false=night;     | schedules.time_of_day
+                             |               | mapping: D/d/A → true,     | (D, d, A → true; N, n, E →
+                             |               | N/n/E → false; 0/null →    |  false; 0, null → null)
+                             |               | null                       |
+  Postponement info          | Text          | Reason or replacement info | schedules.postponement_info
+  Makeup date                | Date          | Date the game was made up  | schedules.makeup_date
+  Made up at venue           | Relation →    | Relocated venue if any     | derived from postponement_info
+                             | Ballpark      |                            |
+
+
+-- Notable game collection --
+
+Description:
+  A curated set of notable games (no-hitters, cycles, triple plays,
+  etc.). Each collection is a Page-style entity; member games are linked
+  via a Collection Data Block whose collection items are Game entities.
+
+Source: special_collections.json (7 categories)
+Name format:  collection name (e.g., "No-hitters", "Triple plays")
+
+Properties:
+  Name                       | Text          |                            | (per category)
+  Description                | Text          | Short blurb                | system
+  Cover                      | Image         |                            | system
+  Collection category        | Relation →    | Which curated category     | special_collections key
+                             | Notable       |                            |
+                             | collection    |                            |
+                             | category      |                            |
+
+
+================================================================================
+3. RELATION ENTITY TYPES
+================================================================================
+
+Entities that *are* the link between two other entities, with their own
+schema. A relation property has both a "to" target type AND a "relation
+entity" type; the relation entity carries any per-link data.
+
+
+-- Team game record --
+
+Used on:    Game.Teams relation
+Connects:   Game → Team
+Cardinality: 2 per Game (one Home, one Away)
+Source:     gamelogs.ndjson v_*/h_* fields + gameinfo manager IDs
+
+Description:
+  Everything that is "this team in this specific game" — which side
+  they played on, their score and result, their manager and starting
+  pitcher, and full team box totals.
+
+Properties:
+  Side                       | Relation → Side       | Home / Away          | gamelogs visiting/home
+  Score                      | Integer               | Final runs           | gamelogs.visiting_score / home_score
+  Result                     | Relation → Game result| Win / Loss / Tie     | derived
+  Manager                    | Relation → Person     |                      | gamelogs.v_manager_id / h_manager_id
+  Starting pitcher           | Relation → Person     |                      | gamelogs.v/h_starting_pitcher_id
+  At bats                    | Integer               |                      | gamelogs.v/h_at_bats
+  Hits                       | Integer               |                      | gamelogs.v/h_hits
+  Doubles                    | Integer               |                      | gamelogs.v/h_doubles
+  Triples                    | Integer               |                      | gamelogs.v/h_triples
+  Home runs                  | Integer               |                      | gamelogs.v/h_home_runs
+  Runs batted in             | Integer               |                      | gamelogs.v/h_rbi
+  Walks                      | Integer               |                      | gamelogs.v/h_walks
+  Strikeouts                 | Integer               |                      | gamelogs.v/h_strikeouts
+  Stolen bases               | Integer               |                      | gamelogs.v/h_stolen_bases
+  Left on base               | Integer               |                      | gamelogs.v/h_left_on_base
+
+
+-- Umpire assignment --
+
+Used on:    Game.Umpires relation
+Connects:   Game → Person
+Cardinality: typically 4 (HP, 1B, 2B, 3B); 6 for postseason crews
+Source:     gameinfo.umphome / ump1b / ump2b / ump3b / umplf / umprf
+
+Description:
+  Which position each umpire worked in that game.
+
+Properties:
+  Umpire position            | Relation → Umpire position | Home plate, 1B, … | gameinfo umpire field
+
+Ordering: home plate first, then 1B / 2B / 3B, then LF / RF.
+
+
+-- Roster position assignment --
+
+Used on:    Roster entry."Positions played" relation
+Connects:   Roster entry → Position
+Cardinality: one per position the player appeared at
+Source:     rosters.position (primary) + allplayers g_p / g_sp / g_rp /
+            g_c / g_1b / g_2b / g_3b / g_ss / g_lf / g_cf / g_rf / g_of /
+            g_dh / g_ph / g_pr counts
+
+Description:
+  How many games the player appeared at each position in that
+  player-team-season.
+
+Properties:
+  Games played               | Integer | Games at this position | allplayers g_<pos>
+
+Ordering: primary position first (from rosters.json); then descending
+Games played.
+
+
+-- Team ballpark tenancy --
+
+Used on:    Team."Home ballparks" relation
+Connects:   Team → Ballpark
+Cardinality: one per (Team, Ballpark) combination
+Source:     derived from gamelogs (filter to home games for this team,
+            group by park_id, min/max date)
+
+Description:
+  When a team played its home games at a given ballpark — useful for
+  teams that switched parks (Yankees: Yankee Stadium I → temp digs →
+  Yankee Stadium II) or shared parks during transitional periods.
+
+Properties:
+  First game date            | Date  | First home game at this park   | derived
+  Last game date             | Date  | Last home game at this park    | derived
+  Notes                      | Text  | e.g., "shared with BSN 1914-15"| derived
+
+Ordering: chronological by First game date.
+
+
+================================================================================
+4. REFERENCE / LOOKUP TYPES
+================================================================================
+
+Small finite sets pointed to by relation properties. Each instance is an
+entity with its own Name and Description; many also have an
+Abbreviation, Code, or Position number.
+
+
+  Position
+    Pitcher (P, 1), Catcher (C, 2), First baseman (1B, 3),
+    Second baseman (2B, 4), Third baseman (3B, 5), Shortstop (SS, 6),
+    Left fielder (LF, 7), Center fielder (CF, 8), Right fielder (RF, 9),
+    Designated hitter (DH, 10), Outfielder (OF), Pinch hitter (PH),
+    Pinch runner (PR), Bench (B), Inactive / DNP (X)
+
+  Handedness
+    Left (L), Right (R), Both/Switch (B), Unknown (?)
+
+  Person role
+    Player, Manager, Coach, Umpire, Official scorer
+
+  Game type
+    Regular season (regular), Wild card (wildcard),
+    Division series (divisionseries), League championship series (lcs),
+    World series (worldseries), All-star game (allstar),
+    Championship (championship), Playoff (playoff), Exhibition (exhibition)
+
+  Field condition
+    Dry, Wet, Damp, Soaked, Muddy, Unknown
+
+  Precipitation
+    None, Drizzle, Rain, Showers, Snow, Unknown
+
+  Sky condition
+    Sunny, Cloudy, Overcast, Dome, Night, Unknown
+
+  Wind direction
+    To left field (tolf), To center field (tocf), To right field (torf),
+    Left to right (ltor), Right to left (rtol),
+    From center field (fromcf), From left field (fromlf),
+    From right field (fromrf), Unknown
+
+  Day of week
+    Monday … Sunday (with ISO weekday number)
+
+  Stat type
+    Value (as-played), Official (official scorer adjustment),
+    Lower bound, Upper bound (for uncertain historical stats)
+
+  Game result
+    Win, Loss, Tie
+
+  Side
+    Home, Away
+
+  Umpire position
+    Home plate, First base, Second base, Third base, Left field, Right field
+
+  Half inning
+    Top, Bottom
+
+  Play event type
+    Single, Double, Triple, Home run, Walk, Intentional walk,
+    Hit by pitch, Strikeout, Groundout, Flyout, Lineout, Popout,
+    Foul out, Bunt, Sacrifice hit, Sacrifice fly, Double play,
+    Triple play, Error, Fielder's choice, Reached on interference,
+    Stolen base, Caught stealing, Pickoff, Wild pitch, Passed ball,
+    Balk, No play, Other
+
+  Hit trajectory
+    Fly ball, Ground ball, Line drive, Pop up, Bunt ground ball,
+    Bunt fly ball, Bunt pop up, Bunt line drive, Foul fly, Unknown
+
+  Ejection role
+    Player (P), Manager (M), Coach (C), Trainer (T), Non-uniformed (N)
+
+  Notable collection category
+    No-hitters (nohitters), Triple plays (tripleplays),
+    Cycles (cycles), Three-home-run games (3HR),
+    15+ strikeout games (15K), 20+ inning games (20innings),
+    Interracial games (interracial)
+
+  PBP source
+    Recorded (y), Deduced (deduced)
+
+
+================================================================================
+5. RELATION SUMMARY
+================================================================================
+
+Every relation property in the ontology, grouped by source entity. Plain
+relations are simple links; relations with a relation entity type carry
+data on the link itself.
+
+  Person
+    Birth place                   → City | State or region | Country
+    Death place                   → City | State or region | Country
+    Bats                          → Handedness
+    Throws                        → Handedness
+
+  Team
+    City                          → City
+    Leagues (multi)               → League
+    Home ballparks (multi, ord)   → Ballpark        [rel entity: Team ballpark tenancy]
+
+  Ballpark
+    City                          → City
+    State or region               → State or region
+    Country                       → Country
+    Primary league                → League
+
+  City
+    State or region               → State or region
+    Country                       → Country
+
+  State or region
+    Country                       → Country
+
+  Season
+    League                        → League
+
+  Game
+    Day of week                   → Day of week
+    Teams (multi, x2)             → Team            [rel entity: Team game record]
+    Venue                         → Ballpark
+    Game type                     → Game type
+    Season                        → Season
+    Field condition               → Field condition
+    Precipitation                 → Precipitation
+    Sky condition                 → Sky condition
+    Wind direction                → Wind direction
+    Umpires (multi, ord)          → Person          [rel entity: Umpire assignment]
+    Official scorer               → Person
+    Winning pitcher               → Person
+    Losing pitcher                → Person
+    Save pitcher                  → Person
+
+  Roster entry
+    Person                        → Person
+    Team                          → Team
+    Season                        → Season
+    Positions played (multi, ord) → Position        [rel entity: Roster position assignment]
+
+  Staff stint
+    Person                        → Person
+    Role                          → Person role
+    Team                          → Team (optional)
+    Season                        → Season
+
+  Batting line
+    Game                          → Game
+    Batter                        → Person
+    Team                          → Team
+    Opponent team                 → Team
+    Stat type                     → Stat type
+
+  Pitching line
+    Game                          → Game
+    Pitcher                       → Person
+    Team                          → Team
+    Opponent team                 → Team
+    Stat type                     → Stat type
+
+  Fielding line
+    Game                          → Game
+    Fielder                       → Person
+    Team                          → Team
+    Opponent team                 → Team
+    Position                      → Position
+    Stat type                     → Stat type
+
+  Play
+    Game                          → Game
+    Half inning                   → Half inning
+    Batting team                  → Team
+    Pitching team                 → Team
+    Batter                        → Person
+    Pitcher                       → Person
+    Batter handedness             → Handedness
+    Pitcher handedness            → Handedness
+    Event types (multi)           → Play event type
+    Fielders involved (multi,ord) → Position
+    Hit trajectory                → Hit trajectory
+    Runner on first after         → Person
+    Runner on second after        → Person
+    Runner on third after         → Person
+    Pitcher responsible for       → Person
+      runner on first
+    PBP source                    → PBP source
+
+  Ejection
+    Game                          → Game
+    Ejected person                → Person
+    Ejected role                  → Ejection role
+    Team                          → Team
+    Ejecting umpire               → Person
+
+  Scheduled game
+    Day of week                   → Day of week
+    Home team                     → Team
+    Away team                     → Team
+    Season                        → Season
+    Made up at venue              → Ballpark
+
+  Notable game collection
+    Collection category           → Notable collection category
+
+
+================================================================================
+6. ENTITY RELATIONSHIP DIAGRAM
+================================================================================
+
+Top-level entities and the main relations between them. Reference types,
+auxiliary properties, and relation entities are summarized; see sections
+2–4 for full schema.
+
+
+    ┌─────────┐         ┌──────────────────┐
+    │ Country │◄────────┤ State or region  │
+    └────▲────┘         └─────────▲────────┘
+         │                        │
+         │                  ┌─────┴────┐
+         │                  │   City   │
+         │                  └─────▲────┘
+         │             ┌──────────┼──────────┐
+         │             │          │          │
+         │       ┌─────┴────┐ ┌───┴────┐ ┌───┴──────┐
+         │       │  Person  │ │  Team  │ │ Ballpark │
+         │       └────┬─────┘ └────┬───┘ └────▲─────┘
+         │            │            │          │ Venue
+         │            │            │          │
+         │            │       Home ballparks  │
+         │            │       [Team ballpark  │
+         │            │        tenancy]       │
+         │            │            │          │
+         │       ┌────┴────────────┴──────────┴────┐
+         │       │                                 │
+         │       ▼                                 ▼
+         │  ┌────────────┐                    ┌─────────┐
+         │  │Roster entry├──Positions played──► Position│
+         │  └────────────┘    [Roster pos.    └────▲────┘
+         │       ▲             assignment]         │
+         │       │                                 │
+         │  ┌────┴───────┐                         │
+         │  │Staff stint │                         │
+         │  └────────────┘                         │
+         │       ▲                                 │
+         │       │ Role                            │
+         │       ▼                                 │
+         │  ┌──────────────┐                       │
+         └──┤ Person role  │                       │
+            └──────────────┘                       │
+                                                   │
+    ┌─────────┐                                    │
+    │ League  │◄──── Leagues                       │
+    └────▲────┘                                    │
+         │                                         │
+         │ League        Teams [Team game record]  │
+         │   ┌───────────────────────┐             │
+         │   │                       │             │
+    ┌────┴───┴──┐                    ▼             │
+    │  Season   │◄── Season   ┌───────────┐        │
+    └───────────┘             │   Game    │◄── Venue
+                              │           │
+                              │           │◄── Umpires [Umpire assignment]
+                              └─────┬─────┘
+                                    │
+              ┌──────────┬──────────┼──────────┬──────────┐
+              │          │          │          │          │
+              ▼          ▼          ▼          ▼          ▼
+       ┌───────────┐┌──────────┐┌──────────┐┌────────┐┌───────────┐
+       │ Batting   ││ Pitching ││ Fielding ││  Play  ││ Ejection  │
+       │  line     ││  line    ││  line    ││        ││           │
+       └───────────┘└──────────┘└──────────┘└────────┘└───────────┘
+            │            │            │          │           │
+            └────────────┴────┬───────┴──────────┴───────────┘
+                              │
+                              ▼ Person link
+                         (Batter, Pitcher,
+                          Fielder, etc.)
+
+    ┌──────────────────┐                  ┌──────────────────────┐
+    │ Scheduled game   │── Home/Away team │ Notable game         │
+    │                  │── Season          ▶ collection           │
+    │                  │── Made up at      │  ─Blocks→ Game(s)   │
+    │                  │   venue           └──────────────────────┘
+    └──────────────────┘
+
+
+    Key:
+      ──►   single relation (target type)
+      [..]  relation entity type (data lives on the link)
+      ◄──   inbound relation (read-from-the-other-side direction)
+
+
+================================================================================
+SOURCES
+================================================================================
+
+  players.json (26,961)              → Person
+  teams.json (293)                   → Team, League instances
+  ballparks.json (656)               → Ballpark
+  rosters.json (125,566)             → Roster entry (with allplayers)
+  allplayers.ndjson (130,791)        → Roster entry (per-position counts)
+  gamelogs.ndjson (237,580)          → Game, Team game record, Season,
+                                       Team ballpark tenancy
+  gameinfo.ndjson (224,877)          → Game (weather/umpires/conditions),
+                                       Umpire assignment, Staff stint
+  schedules.ndjson (238,816)         → Scheduled game
+  ejections.json (19,730)            → Ejection
+  batting.ndjson (5,746,328)         → Batting line
+  pitching.ndjson (1,269,889)        → Pitching line
+  fielding.ndjson (1,738,253)        → Fielding line
+  plays.ndjson (6,515,744)           → Play
+  special_collections.json (2,733)   → Notable game collection
+
+  Total: ~16.3M records across 14 files (9.6 GB on disk).

@@ -1,0 +1,548 @@
+================================================================================
+RETROSHEET DATA EXPLORATION NOTES
+For Geo Knowledge Graph Ontology Design
+================================================================================
+
+16.3 million records across 14 files. This document summarizes each source,
+classifies fields by how they should be modeled on the Geo KG, and proposes
+entity/relation architecture.
+
+
+================================================================================
+ENTITY TAXONOMY
+================================================================================
+
+CORE ENTITIES (standalone nodes in the graph):
+  Person      — 26,961 people (players, managers, coaches, umpires)
+  Team        — 293 franchises (MLB + Negro Leagues)
+  Ballpark    — 656 venues
+  League      — small finite set (~15 codes); categorical → relation entity
+  Season      — one entity per year; games and rosters point to it
+  Game        — 237,580 played games (gamelogs + gameinfo merged)
+
+RELATION/JUNCTION ENTITIES (edges with data attached):
+  Roster Entry       — Person ↔ Team for a season (position, year)
+  Batting Line       — Person's batting stats in a single game
+  Pitching Line      — Person's pitching stats in a single game
+  Fielding Line      — Person's fielding stats in a single game
+  Player Season      — Per-position game counts per player-team-season (allplayers)
+  Ejection           — Person ejected from a specific game
+
+HIGH-VOLUME / DEFERRED:
+  Play (Plate Appearance) — 6.5M records; too granular for initial publish
+  Scheduled Game          — 238K records; overlaps gamelogs, adds postponements
+
+COLLECTION TAGS:
+  Special Collections (no-hitters, cycles, etc.) — tag labels on Game entities
+
+
+================================================================================
+FILE-BY-FILE BREAKDOWN
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+1. players.json — 26,961 records → Person entity
+────────────────────────────────────────────────────────────────────────────────
+
+TEXT properties:
+  retrosheet_id   — unique key (text); index by this
+  first_name      — text
+  last_name       — text
+  full_name       — text (use as entity name)
+  birth_name      — text (nullable)
+  alt_name        — text (nullable)
+
+DATE properties:
+  birth_date, death_date
+  debut_player, last_player
+  debut_coach, last_coach
+  debut_manager, last_manager
+  debut_umpire, last_umpire
+
+INTEGER properties:
+  height_inches   — integer (nullable)
+  weight_lbs      — integer (nullable)
+
+BOOLEAN properties:
+  hall_of_fame
+
+RELATION → entity (finite categorical):
+  bats            — "L" / "R" / "B"  → Batting Hand entity
+  throws          — "L" / "R" / "B"  → Throwing Hand entity
+  roles           — array of "player","manager","coach","umpire" → Role entities
+
+RELATION → entity (location):
+  birth_city/state/country   — → Location entity (city, or city+country tuple)
+  death_city/state/country   — → Location entity (nullable)
+
+NOTES: One person can have multiple roles across their career. Debut/last dates
+per role allow the same Person entity to serve as Player, Manager, Coach, or
+Umpire without duplicating the entity.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. teams.json — 293 records → Team entity
+────────────────────────────────────────────────────────────────────────────────
+
+TEXT properties:
+  retrosheet_id   — 2-3 char unique key
+  nickname        — e.g. "Yankees"
+  full_name       — use as entity name
+  city            — text (also consider City relation entity)
+
+INTEGER properties:
+  first_year, last_year (null if active)
+
+RELATION → entity:
+  league          — → League entity (AL, NL, AA, FL, PL, UA, NA, ECL, NNL, etc.)
+  alt_ids         — array of historic team codes; store as text list or separate entities
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. ballparks.json — 656 records → Ballpark entity
+────────────────────────────────────────────────────────────────────────────────
+
+TEXT properties:
+  retrosheet_id   — unique key (e.g. "BOS07")
+  name            — use as entity name (e.g. "Fenway Park")
+  aka             — alternate name (nullable)
+  notes           — free-text usage notes
+
+DATE properties:
+  start_date      — first game (normalize from M/D/YYYY to YYYY-MM-DD)
+  end_date        — last game (null if active)
+
+RELATION → entity:
+  city/state      — → Location entity
+  league          — primary league → League entity
+
+NOTE: start_date/end_date are in M/D/YYYY format in the source; normalize on
+ingest.
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. rosters.json — 125,566 records → Roster Entry (relation entity)
+────────────────────────────────────────────────────────────────────────────────
+
+This is a junction between Person and Team for a given season. Model as a
+relation entity (an entity sitting on the Person→Team edge) with data on it.
+
+RELATION properties (the two endpoints):
+  player_id       — → Person entity
+  team_id         — → Team entity
+
+DATA on the relation entity:
+  INTEGER:  year (season)
+  RELATION: position → Position entity (C, 1B, 2B, 3B, SS, LF, CF, RF, P, DH, OF)
+  RELATION: bats, throws → Hand entities (same as Person; can be redundant/denormalized)
+
+NOTE: A player traded mid-season has multiple roster entries for the same year.
+Each entry is its own relation entity.
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. gamelogs.ndjson — 237,580 records → Game entity (primary game source)
+────────────────────────────────────────────────────────────────────────────────
+
+Merge with gameinfo (file 12) on game ID. gamelogs has team totals; gameinfo
+has weather, umpires, conditions.
+
+DATE properties:
+  date            — game date (YYYY-MM-DD)
+
+INTEGER properties (game metadata):
+  visiting_score, home_score
+  game_length_outs   — total outs (54 = regulation 9 innings)
+  attendance
+  duration_minutes
+  game_number        — 0=single, 1/2=doubleheader (store as integer)
+
+TEAM BOX SCORE STATS — store on team-game relation entities OR directly on Game:
+  v_at_bats, v_hits, v_doubles, v_triples, v_home_runs, v_rbi,
+  v_walks, v_strikeouts, v_stolen_bases, v_left_on_base (visiting)
+  h_at_bats ... h_left_on_base (home) — same set of 10 fields
+
+RELATION → entity:
+  visiting_team, home_team   — → Team entity
+  park_id                    — → Ballpark entity
+  hp_umpire_id               — → Person entity (umpire)
+  v_manager_id, h_manager_id — → Person entity (manager)
+  winning_pitcher_id         — → Person entity
+  losing_pitcher_id          — → Person entity
+  save_pitcher_id            — → Person entity (nullable)
+  v_starting_pitcher_id      — → Person entity
+  h_starting_pitcher_id      — → Person entity
+  visiting_league/home_league — → League entity (redundant via team)
+
+CATEGORICAL → relation entity:
+  day_night       — "D"/"N" → Day/Night entity
+  gametype        — "regular","worldseries","alcs","nlcs","alds","nlds",
+                    "wildcard","allstar" → Game Type entity
+  day_of_week     — text (low-value for graph)
+
+TEXT properties:
+  completion_info — nullable free text
+  forfeit_info    — nullable free text
+  acquisition_info — "Y" if acquired by Retrosheet (metadata, probably skip)
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. ejections.json — 19,730 records → Ejection entity
+────────────────────────────────────────────────────────────────────────────────
+
+Each ejection is its own entity, linked to a game, the ejected person, and the
+umpire who ejected them.
+
+RELATION → entity:
+  game_id (ejections.game_id)  — → Game entity
+  ejected_id                   — → Person entity
+  team                         — → Team entity
+  umpire_id                    — → Person entity
+
+INTEGER properties:
+  inning          — inning of ejection ("-1" if unknown; store as integer, null if -1)
+
+TEXT properties:
+  reason          — free-text description of ejection reason
+
+CATEGORICAL → relation entity:
+  role            — "P"/"M"/"C" → Role entity (Player/Manager/Coach)
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. schedules.ndjson — 238,816 records → Scheduled Game entity (optional)
+────────────────────────────────────────────────────────────────────────────────
+
+Overlaps heavily with gamelogs. Key additions: postponement info and future
+games (through 2026). Consider publishing only as supplement/enrichment to
+Game entities, or as a lightweight Scheduled Game type for future games that
+haven't been played yet.
+
+RELATION → entity:
+  visiting_team, home_team — → Team entity
+
+DATE properties:
+  date, makeup_date (null if not postponed)
+
+INTEGER properties:
+  visiting_game_number, home_game_number (sequential game # for the season)
+
+TEXT/CATEGORICAL:
+  game_number     — 0/1/2
+  time_of_day     — "D"/"d"/"N"/"n"
+  postponement_info — either a venue code or reason text
+
+
+────────────────────────────────────────────────────────────────────────────────
+8. batting.ndjson — 5,746,328 records → Batting Line entity
+────────────────────────────────────────────────────────────────────────────────
+
+One entity per player per game. Stores individual batting performance.
+
+RELATION → entity:
+  gid (game ID)   — → Game entity
+  id (player)     — → Person entity
+  team            — → Team entity
+  opp             — → Team entity (opponent)
+  site            — → Ballpark entity
+
+INTEGER properties:
+  b_lp   — lineup position (1-9)
+  b_seq  — sequence in slot (1=starter, 2+=subs)
+  b_pa   — plate appearances
+  b_ab   — at bats
+  b_r    — runs
+  b_h    — hits
+  b_d    — doubles
+  b_t    — triples
+  b_hr   — home runs
+  b_rbi  — RBI
+  b_sh   — sacrifice hits
+  b_sf   — sacrifice flies
+  b_hbp  — hit by pitch
+  b_w    — walks
+  b_iw   — intentional walks
+  b_k    — strikeouts
+  b_sb   — stolen bases
+  b_cs   — caught stealing
+  b_gdp  — grounded into double play
+  b_xi   — reached on interference
+  b_roe  — reached on error
+
+BOOLEAN properties:
+  dh        — batting as designated hitter
+  win/loss/tie — team result (0/1 strings → boolean)
+
+CATEGORICAL → relation:
+  gametype  — → Game Type entity
+  vishome   — "v"/"h" → Visiting/Home entity
+  stattype  — "value"/"official" (probably just text/skip)
+
+DATE: date (redundant with game entity; skip or store for query convenience)
+
+
+────────────────────────────────────────────────────────────────────────────────
+9. pitching.ndjson — 1,269,889 records → Pitching Line entity
+────────────────────────────────────────────────────────────────────────────────
+
+Same relational structure as Batting Line. One entity per pitcher per game.
+
+RELATION → entity:
+  gid → Game, id → Person, team → Team, opp → Team, site → Ballpark
+
+INTEGER properties:
+  p_seq     — pitching sequence (1=starter, 2+=relievers)
+  p_ipouts  — innings pitched as outs (27 = 9 IP)
+  p_bfp     — batters faced
+  p_h, p_d, p_t, p_hr — hits/doubles/triples/HR allowed
+  p_r, p_er           — runs, earned runs
+  p_w, p_iw           — walks, intentional walks
+  p_k                 — strikeouts
+  p_hbp               — hit batters
+  p_wp                — wild pitches
+  p_bk                — balks
+  p_sh, p_sf          — sacrifice hits/flies allowed
+  p_sb, p_cs          — stolen bases allowed, caught stealing
+  p_pb                — passed balls
+
+BOOLEAN properties:
+  p_noout   — pitcher recorded no outs
+  p_gf      — game finished (closer/finisher)
+  lp        — losing pitcher
+  p_gs      — game started
+  p_cg      — complete game
+
+
+────────────────────────────────────────────────────────────────────────────────
+10. fielding.ndjson — 1,738,253 records → Fielding Line entity
+────────────────────────────────────────────────────────────────────────────────
+
+One entity per player per position per game. A player at two positions in one
+game has two records.
+
+RELATION → entity:
+  gid → Game, id → Person, team → Team, opp → Team, site → Ballpark
+
+INTEGER properties:
+  d_seq     — defensive sequence at position (1=started, 2+=entered later)
+  d_ifouts  — innings fielded as outs (27 = 9 full innings)
+  d_po      — putouts
+  d_a       — assists
+  d_e       — errors
+  d_dp      — double plays
+  d_tp      — triple plays
+
+RELATION → entity:
+  d_pos     — position number (1=P through 10=DH) → Position entity
+
+BOOLEAN:
+  d_gs      — started at this position
+
+NOTE: Coverage ends ~1961; sparse for early eras.
+
+
+────────────────────────────────────────────────────────────────────────────────
+11. plays.ndjson — 6,515,744 records → Play entity (DEFERRED)
+────────────────────────────────────────────────────────────────────────────────
+
+Play-by-play: one entity per plate appearance. Extremely granular. Likely too
+large to publish in full for a first pass; consider for later phases.
+
+If published, each Play would be:
+
+RELATION → entity:
+  gid → Game
+  batter → Person
+  pitcher → Person
+  batteam, pitteam → Team
+  site → Ballpark
+  br1_post, br2_post, br3_post → Person (runners after play)
+  l1-l9 → Person (lineup)
+  f2-f9 → Person (fielders by position)
+
+INTEGER properties:
+  inning, score_v, score_h, outs_pre, outs_post, lp (lineup pos), pn
+
+BOOLEAN flags:
+  pa, ab, single, double, triple, hr, walk, strikeout, fly, ground, bip, etc.
+
+TEXT:
+  event   — event code (complex; "S"=single, "HR", "63"=groundout SS→1B, etc.)
+  count   — ball-strike count string
+
+CATEGORICAL → relation:
+  bathand, pithand → Hand entities
+  top_bot → Top/Bottom entity
+  gametype → Game Type entity
+
+
+────────────────────────────────────────────────────────────────────────────────
+12. gameinfo.ndjson — 224,877 records → Game entity (additional fields)
+────────────────────────────────────────────────────────────────────────────────
+
+Merge with gamelogs on game ID. Contributes weather, all umpires, and
+start time to the Game entity.
+
+RELATION → entity (all umpires):
+  umphome, ump1b, ump2b, ump3b   — → Person entity
+  umplf, umprf                   — → Person entity (postseason only)
+  oscorer                        — → Person entity (official scorer)
+  wp, lp, save                   — → Person (winning/losing/save pitcher; overlaps gamelogs)
+  visteam, hometeam              — → Team
+  wteam, lteam                   — → Team (winning/losing)
+  site                           — → Ballpark
+
+INTEGER properties:
+  innings       — innings played
+  temp          — temperature °F (0 if unknown)
+  windspeed     — mph (-1 if unknown)
+  attendance, timeofgame
+
+TEXT properties:
+  starttime     — "8:08PM" format
+  season        — year as string (redundant with date)
+  number        — doubleheader number
+
+BOOLEAN:
+  usedh         — designated hitter rule in effect
+
+CATEGORICAL → relation entity:
+  daynight      — "day"/"night" → Day/Night entity
+  fieldcond     — "dry","wet","damp","soaked","unknown" → Field Condition entity
+  precip        — "none","drizzle","rain","showers","snow","unknown" → Precipitation entity
+  sky           — "sunny","cloudy","overcast","dome","night","unknown" → Sky Condition entity
+  winddir       — "tolf","tocf","torf","ltor","rtol","fromcf","fromlf","fromrf","unknown"
+                  → Wind Direction entity
+  gametype      — → Game Type entity
+
+
+────────────────────────────────────────────────────────────────────────────────
+13. allplayers.ndjson — 130,791 records → Player Season entity (relation entity)
+────────────────────────────────────────────────────────────────────────────────
+
+Per-season summary of games played at each position. Enriches the
+Person ↔ Team ↔ Season relationship with position-by-position game counts.
+Can sit on the same relation entity as Roster Entry or be its own entity.
+
+RELATION → entity:
+  id → Person
+  team → Team
+
+INTEGER properties:
+  g           — total games
+  g_p, g_sp, g_rp     — pitcher/starter/reliever games
+  g_c                  — catcher games
+  g_1b, g_2b, g_3b, g_ss — infield position games
+  g_lf, g_cf, g_rf, g_of — outfield games
+  g_dh, g_ph, g_pr    — DH, pinch hit, pinch run games
+  season               — year
+
+DATE properties:
+  first_g, last_g     — first/last game of season (YYYYMMDD → normalize)
+
+
+────────────────────────────────────────────────────────────────────────────────
+14. special_collections.json — 2,733 records → Tags on Game entities
+────────────────────────────────────────────────────────────────────────────────
+
+Seven curated game collections. Same schema as gameinfo. Model as tag
+relations on existing Game entities rather than separate entities.
+
+Categories → suggested tag/label relation:
+  nohitters    (359)   — → "No-Hitter" tag
+  tripleplays  (629)   — → "Triple Play" tag
+  cycles       (319)   — → "Batting Cycle" tag
+  3HR          (712)   — → "3+ Home Run Game" tag
+  15K          (349)   — → "15+ Strikeout Game" tag
+  20innings    (48)    — → "20+ Inning Game" tag
+  interracial  (317)   — → "Exhibition/Barnstorming Game" tag
+
+
+================================================================================
+CATEGORICAL RELATION ENTITIES TO CREATE
+================================================================================
+
+These are finite value sets that should be reusable entities in the graph
+(not raw text properties). Each value is an entity; fields that hold these
+values become relations.
+
+  League          — AL, NL, AA, FL, PL, UA, NA, ECL, NNL, NAL, NSL, ...
+  Position        — P, C, 1B, 2B, 3B, SS, LF, CF, RF, OF, DH, PH, PR
+  Batting Hand    — Left, Right, Both
+  Throwing Hand   — Left, Right, Both
+  Role            — Player, Manager, Coach, Umpire
+  Game Type       — Regular Season, World Series, ALCS, NLCS, ALDS, NLDS,
+                    Wild Card, All-Star Game
+  Day/Night       — Day, Night
+  Field Condition — Dry, Wet, Damp, Soaked, Unknown
+  Precipitation   — None, Drizzle, Rain, Showers, Snow, Unknown
+  Sky Condition   — Sunny, Cloudy, Overcast, Dome, Night, Unknown
+  Wind Direction  — To Left Field, To Center Field, To Right Field,
+                    Left to Right, Right to Left, From Center, From Left,
+                    From Right, Unknown
+
+
+================================================================================
+MODELING DECISIONS & OPEN QUESTIONS
+================================================================================
+
+1. GAME IDENTITY: gamelogs and gameinfo both describe the same games but are
+   separate files. Merge on game ID (team+date+number) into a single Game entity
+   at publish time. gamelogs has team box score totals; gameinfo has weather +
+   full umpire crew.
+
+2. TEAM BOX SCORE STATS: The 10 v_*/h_* stat fields in gamelogs could go:
+   (a) directly on the Game entity as visiting_* / home_* properties, or
+   (b) on separate Team-Game relation entities (one per team per game).
+   Option (b) is cleaner structurally but doubles the relation count.
+   Lean toward (a) for simplicity in v1.
+
+3. SEASON ENTITY: gamelogs and allplayers carry a season/year. Consider
+   creating a Season entity (e.g., "1927 MLB Season") so games, rosters, and
+   player seasons can all point to it. Makes temporal queries much cleaner.
+
+4. ROSTER vs. PLAYER SEASON: rosters.json and allplayers.ndjson overlap.
+   rosters gives the primary position per team-season stint; allplayers gives
+   per-position game counts. These can merge into a single Roster Entry /
+   Player Season entity that carries both.
+
+5. PLAYS (play-by-play): At 6.5M records, publishing all plays is a large
+   undertaking. Consider a phased approach: publish games first, then add
+   plays for specific high-interest games (World Series, no-hitters, etc.).
+
+6. LOCATION ENTITIES: birth_city/state/country on Person and city/state on
+   Ballpark reference locations. For a first pass, store as text properties.
+   For a richer graph, create City/Country entities and link via relation —
+   this enables geographic queries but adds complexity.
+
+7. SPECIAL COLLECTIONS: Rather than re-publishing these as new entities
+   (they're just gameinfo records), attach them as tags/labels to existing
+   Game entities during the Game publish step. Check for membership in each
+   collection and add the appropriate tag relation.
+
+
+================================================================================
+PUBLISHING PRIORITY ORDER (suggested)
+================================================================================
+
+Phase 1 — Core reference data (small, high-reuse):
+  Leagues, Positions, Hands, Roles, Game Types, Weather categoricals
+  Teams (293)
+  Ballparks (656)
+  Persons (26,961)
+
+Phase 2 — Games (primary content):
+  Games / gamelogs + gameinfo merged (237,580)
+  Special collection tags applied to games
+
+Phase 3 — Roster/season data:
+  Roster Entries / Player Seasons (merge rosters + allplayers, ~125K)
+
+Phase 4 — Per-game player stats:
+  Batting Lines (5.7M)
+  Pitching Lines (1.3M)
+  Fielding Lines (1.7M)
+
+Phase 5 — Granular (if desired):
+  Play-by-play (6.5M)
+  Ejections (19,730) — small enough to fold into Phase 2 or 3

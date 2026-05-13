@@ -329,6 +329,7 @@ Season entity
 Game entity
 On relation entity to team could have team summary stats
 
+
 Fields:
   date                   — Game date (YYYY-MM-DD)
   game_number            — "0" for single game, "1"/"2" for doubleheader

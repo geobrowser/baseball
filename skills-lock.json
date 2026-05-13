@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "geo-publish": {
+      "source": "geobrowser/geo-skills",
+      "sourceType": "github",
+      "skillPath": "geo-publish/SKILL.md",
+      "computedHash": "316327f6e24a3cb1d0e3b51e4cb1ff7790a0696e1a519fd190085260435451e7"
+    },
+    "geo-query": {
+      "source": "geobrowser/geo-skills",
+      "sourceType": "github",
+      "skillPath": "geo-query/SKILL.md",
+      "computedHash": "170466a2f37415f4612ce961bc3b3344677bbdfb7331655f7b98abe76c90e5e9"
+    }
+  }
+}

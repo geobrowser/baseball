@@ -6,33 +6,134 @@ Each prompt picks up where the last left off. Notes in [brackets] describe what 
 
 ---
 
-PHASE 1: DATA EXPLORATION
+PHASE 1: DATA EXPLORATION (Video 1: Introduction)
 --------------------------
 
-Prompt 1 — Explore the data
+Prompt 1 — Explore the Geo API
+---
+Can you walk me through 01_api_demo.ts and explain what it's doing? I want to understand how to query the Geo knowledge graph API before we design our ontology.
+---
+[Claude explains the GraphQL API patterns, entity/value/relation model, and how to query existing types in the root space.]
+
+Prompt 2 — Explore the data
 ---
 We have downloaded and parsed all available data from retrosheet.org. The parsed data is in data/parsed/ and there is a field reference in data_samples.txt. Can you review the data_samples.txt file and output a summary of all the entity types we have available, what fields each one has, and which fields look like they would be candidates for relations vs text/numeric properties on a Geo knowledge graph? Write this to a file called data_exploration_notes.txt.
 ---
 [Claude will read data_samples.txt and produce a structured breakdown of all 14 data files with field categorization suggestions.]
 
 
-Prompt 2 — Explore the Geo API
----
-Can you walk me through 01_api_demo.ts and explain what it's doing? I want to understand how to query the Geo knowledge graph API before we design our ontology.
----
-[Claude explains the GraphQL API patterns, entity/value/relation model, and how to query existing types in the root space.]
-
-
-Prompt 3 — Check what already exists on Geo
----
-Can you query the Geo GraphQL API to check what entity types already exist that are relevant to our baseball data? I'm thinking about types like Person, Team, City, State, Country, Role. Check if these exist and if so, get their IDs. We will want to reuse them rather than create duplicates.
----
-[Claude will query the API and return the IDs for existing system types. These get marked `existing: true` in ontology.json later.]
-
 
 ---
-PHASE 2: ONTOLOGY DESIGN
+PHASE 2: ONTOLOGY DESIGN (Video 1: Ontology)
 --------------------------
+
+
+Here, I have given you a partial example of the ontological setup for the Game type and the necessary properties. Can you use this and extend a full ontology based on the data found in @data_samples.txt 
+
+-- Types --
+
+Name: Game
+Types: Type
+Description: A single baseball game between two teams.
+Properties:
+  Date, Game number, Home team, Away team, 
+  Home score, Away score, Venue, Attendance, 
+  Duration (minutes), Day game, Game length (outs), 
+  Winning pitcher, Losing pitcher, Retrosheet game ID ...
+
+Source: gamelogs.ndjson + gameinfo.ndjson (Retrosheet)
+Name format: "AWAY @ HOME — YYYY-MM-DD" (e.g., "NYA @ LAN — 2024-10-30")
+Description: final score + key pitchers
+
+── Game Properties ────────────────────────────────────────────────────────────
+
+Name: Date
+Types: Property
+Data type: Date
+Description: The date the game was played.
+
+Name: Game number
+Types: Property
+Data type: Integer
+Description: 0 for single game, 1 or 2 for doubleheader
+
+Name: Home team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The home team in this game.
+
+Name: Away team
+Types: Property
+Data type: Relation
+To entity types: Team
+Description: The away team in this game.
+
+Name: Home score
+Types: Property
+Data type: Integer
+Description: The home team's final run total.
+
+Name: Away score
+Types: Property
+Data type: Integer
+Description: The away team's final run total.
+
+Name: Venue
+Types: Property
+Data type: Relation
+To entity types: Ballpark
+Description: The ballpark where this game was played.
+
+Name: Attendance
+Types: Property
+Data type: Integer
+Description: The number of people in attendance.
+
+Name: Duration (minutes)
+Types: Property
+Data type: Integer
+
+Name: Day game
+Types: Property
+Data type: Boolean
+Description: true = day game, false = night game
+
+Name: Game length (outs)
+Types: Property
+Data type: Integer
+Description: Total outs recorded (54 = regulation 9-inning game)
+
+Name: Winning pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The pitcher credited with the win.
+
+Name: Losing pitcher
+Types: Property
+Data type: Relation
+To entity types: Person
+Description: The pitcher charged with the loss.
+
+Name: Retrosheet game ID
+Types: Property
+Data type: Text
+Description: Retrosheet game ID (e.g., "NYA202410300")
+
+
+---
+
+Based on the Retrosheet data we have parsed and the Geo knowledge graph model (see @knowledge-graph-ontology.md  for reference), what entity types and properties do you think we should set up for this project? Please think about:
+- What are the top-level entity types (things that will be primary browseable nodes)?
+- What are reference/lookup entity types (small finite sets like positions, handedness, game types)?
+- What properties should each type have, and what data types are most appropriate?
+- Where should we use relations to other entities vs storing a value directly?
+
+Above you can see a partial example of an entity and its properties based on the data structure. Use that as a guide.
+
+Output your proposal as a structured .txt file — I will review and we can iterate.
+
 
 Prompt 4 — Initial ontology proposal
 ---
@@ -42,7 +143,12 @@ Based on the Retrosheet data we have parsed and the Geo knowledge graph model (s
 - What properties should each type have, and what data types are most appropriate?
 - Where should we use relations to other entities vs storing a value directly?
 
-Output your proposal as a structured document — I will review and we can iterate.
+Below you can see an example of an entity and its properties based on the data structure. Use that as a guide.
+
+Types: Game
+Properties: 
+
+Output your proposal as a structured .txt file — I will review and we can iterate.
 ---
 [Claude produces an initial ontology proposal. Expect 15–20 types and 80–100 properties. Review and discuss before writing files.]
 
@@ -57,6 +163,8 @@ Looking at the ontology proposal, I want to make sure we are using relations whe
 Can you update the ontology proposal accordingly, and also make sure we have the City, State, Country, and League types defined?
 ---
 [Claude updates the proposal to convert text fields to relations and adds the geographic + league type definitions.]
+
+
 
 
 Prompt 6 — Refine data types
@@ -122,9 +230,14 @@ Structure:
 - "properties" object: keyed by snake_case property key, with id, name, description, dataType, and toEntityTypes array (for RELATION properties, list the type keys that are valid targets)
 - "type_schemas" object: keyed by type key, listing the property keys that belong to each type's default schema
 
-For system types that already exist (Person, City, State, Country, Role, Team), use the IDs we found earlier from the API.
+I also want to make sure we re-use existing properties where possible. Some types and properties will already exist in Geo (especially the root space; Space ID: a19c345ab9866679b001d7d2138d88a1), query the API for name and type matches before deciding to create a new type / property. If I find an existing type we can stil create that type in the baseball space at the same entity ID. If we find an existing property, check if the data type is what we desire. If not, create it as a multi space entity in the baseball space as well. Otherwise just reference it. 
+For system types that already exist (Person, City, State, Country, Role, Team), uCan you query the Geo GraphQL API to check what entity types already exist that are relevant to our baseball data? I'm thinking about types like Person, Team, City, State, Country, Role. Check if these exist and if so, get their IDs. We will want to reuse them rather than create duplicates.
+Note: we need to check for both singular and plural names (e.g. check for City and Cities) when looking for existing properties
+
+
 ---
 [Claude generates ontology.json. This is a large file — review the structure and spot check a few types and properties.]
+
 
 
 Prompt 11 — Rename and clean up ontology.json
@@ -150,7 +263,7 @@ Cover all 14 files in data/parsed/. This will be the reference we use when writi
 
 
 ---
-PHASE 3: PUBLISHING THE ONTOLOGY
+PHASE 3: PUBLISHING THE ONTOLOGY (Video 3: Initial publishing / testing)
 ----------------------------------
 
 Prompt 13 — Update CLAUDE.md and docs
@@ -218,6 +331,8 @@ Please write 09_publish_test_entities.ts that publishes in this order:
 Use recent data (2024 season preferred). Before creating any entity, check the API for an existing match using Retrosheet ID or name+type as appropriate. Import helper functions from src/functions.ts.
 
 Read archive/field-mappings.md to understand how source fields map to properties.
+
+Make sure relations reference any existing entities based on name and types matches. Also, If there is a name and type match for an entity in another space create the current entity at the same entity ID, making it a multi space entity.
 ---
 [Claude writes 09_publish_test_entities.ts. This is a large script — review the structure and key entities.]
 

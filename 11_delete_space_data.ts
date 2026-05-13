@@ -11,11 +11,16 @@
  *   bun run 11_delete_space_data.ts --limit 10   # delete at most N entities (for testing)
  */
 
-import { gql, publishOps } from "./src/functions";
+import { gql, publishOps, printOps } from "./src/functions";
 import { deleteEntity, type OpsBatch } from "./src/entity_ops";
 
-const SPACE_ID = "7570a0ba7552e6806e0751c2ad105754";
-const HOME_ENTITY_ID = "7bb902f704fc435297da9c437330f0f2";
+const SPACE_ID = "24cd3c3b36efb0e13ea53fead3f7d2b9";
+const HOME_ENTITY_ID = "3a65270068774755bf4f379ef2b0f371";
+
+//const SPACE_ID = "bd5529695e011fdf76637d4addca733a";
+//const HOME_ENTITY_ID = "3a65270068774755bf4f379ef2b0f371";
+
+
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const LIMIT_ARG = process.argv.indexOf("--limit");
@@ -24,42 +29,36 @@ const LIMIT = LIMIT_ARG !== -1 ? parseInt(process.argv[LIMIT_ARG + 1], 10) : Inf
 // ── Fetch all entity IDs in the space (paginated) ───────────────────────────
 
 async function fetchAllEntityIds(spaceId: string): Promise<{ id: string; name: string }[]> {
-  const entities: { id: string; name: string }[] = [];
-  let cursor: string | null = null;
-  let page = 0;
+  // Collect entity IDs from the space by querying relations and values,
+  // then fetch names in batches using filter: { id: { in: [...] } }.
 
-  while (true) {
-    page++;
-    const afterClause = cursor ? `after: "${cursor}"` : "";
-    const data = await gql(`{
-      entities(
-        spaceId: "${spaceId}"
-        first: 100
-        ${afterClause}
-        orderBy: CREATED_AT_ASC
-      ) {
-        nodes {
-          id
-          name
-        }
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
-      }
-    }`);
+  // Step A: collect all entity IDs that have values or relations in this space
+  const [valuesData, relationsData] = await Promise.all([
+    gql(`{ values(filter: { spaceId: { is: "${spaceId}" } }) { entityId } }`),
+    gql(`{ relations(filter: { spaceId: { is: "${spaceId}" } }) { entityId toEntityId } }`),
+  ]);
 
-    const nodes: { id: string; name: string }[] = data.entities?.nodes ?? [];
-    const pageInfo = data.entities?.pageInfo;
+  const idSet = new Set<string>();
+  for (const v of valuesData.values ?? []) idSet.add(v.entityId);
+  for (const r of relationsData.relations ?? []) {
+    idSet.add(r.entityId);
+    idSet.add(r.toEntityId);
+  }
+  const ids = [...idSet];
 
-    entities.push(...nodes);
-    console.log(`  Page ${page}: fetched ${nodes.length} entities (total so far: ${entities.length})`);
+  if (ids.length === 0) return [];
 
-    if (!pageInfo?.hasNextPage) break;
-    cursor = pageInfo.endCursor;
+  // Step B: fetch names in batches of 200
+  const BATCH = 200;
+  const results: { id: string; name: string }[] = [];
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    const filter = batch.map(id => `"${id}"`).join(", ");
+    const data = await gql(`{ entities(filter: { id: { in: [${filter}] } }) { id name } }`);
+    results.push(...(data.entities ?? []));
   }
 
-  return entities;
+  return results;
 }
 
 // ── Fetch entity IDs referenced by the home entity ──────────────────────────
@@ -103,7 +102,7 @@ async function main() {
   // Step 2: Fetch all entities in the space
   console.log("── Step 2: Fetching all entities in space ──");
   const allEntities = await fetchAllEntityIds(SPACE_ID);
-  console.log(`  Total entities in space: ${allEntities.length}\n`);
+  console.log(`  Found ${allEntities.length} entities\n`);
 
   // Step 3: Filter to entities we should delete
   const toDelete = allEntities.filter(e => !protectedIds.has(e.id));
@@ -117,11 +116,22 @@ async function main() {
   console.log(`  Skipping (protected): ${protectedIds.size}`);
 
   if (DRY_RUN) {
-    console.log("\n── DRY RUN — listing entities that would be deleted ──");
-    for (const e of limited) {
-      console.log(`  [${e.id}] ${e.name ?? "(unnamed)"}`);
+    console.log(`\n── DRY RUN — gathering ops for ${limited.length} entities ──\n`);
+    const dryBatch: OpsBatch = new Map();
+    let i = 0;
+    for (const entity of limited) {
+      await deleteEntity({
+        entityId: entity.id,
+        spaceId: SPACE_ID,
+        skipOrphanCleanup: true,
+        opsBatch: dryBatch,
+      });
+      i++;
+      console.log(`  [${i}/${limited.length}] ${entity.name ?? entity.id}`);
     }
-    console.log(`\n  Total: ${limited.length} entities would be deleted.`);
+    const dryOps = dryBatch.get(SPACE_ID) ?? [];
+    printOps(dryOps, ".", "delete_ops_dryrun.txt");
+    console.log(`\n  ${limited.length} entities, ${dryOps.length} ops written to delete_ops_dryrun.txt`);
     console.log("  Run without --dry-run to execute.");
     return;
   }
@@ -149,8 +159,7 @@ async function main() {
     await deleteEntity({
       entityId: entity.id,
       spaceId: SPACE_ID,
-      skipOrphanCleanup: true, // bulk delete — skip cascading orphan checks
-      dryRun: true,            // don't publish yet — accumulate into opsBatch
+      skipOrphanCleanup: true,
       opsBatch,
     });
     gathered++;
